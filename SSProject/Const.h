@@ -210,4 +210,12 @@ static int convertStringToInt(string text)
 			return atoi(text.c_str());
 }
 
+static void sectionName(string &text)
+{
+	toUpper(text);
+	if (text.substr(0, 7) == ".RODATA") text=".RODATA";
+	if (text.substr(0, 5) == ".DATA") text = ".DATA";
+	if (text.substr(0, 5) == ".TEXT") text=".TEXT";
+	if (text.substr(0, 4) == ".BSS") text=".BSS";
+}
 #endif // !Const_

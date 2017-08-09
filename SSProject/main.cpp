@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include "SymbolTable.h"
+#include "Parser.h"
 
 using namespace std;
 int main()
@@ -10,6 +11,8 @@ int main()
 		cout << Sections.at(i) << endl;
 	cout << isSection(".text");
 	
+	Parser* parser = new Parser("C:\\Users\\Ksenija\\Desktop\\projekatSSC++\\tests\\test2");
+
 	//cout << OperationCodes.at("JLZ");
 	cout << RegisterCodes.at("R14")<<endl;
 	//cout << AddressModeCodes.at(0b100);
@@ -18,7 +21,7 @@ int main()
 	//cout << IsRegdir("R1")<<endl;
 
 	cout << isRegindDisp("[R2 + 4]") << endl;
-	string x = "Ksenija";
+	/*string x = "Ksenija";
 	toUpper(x);
 	cout << x << endl;
 	cout << isSection(".RODATA") << endl;
@@ -34,7 +37,12 @@ int main()
 
 	cout << convertStringToInt("0x20");
 	cout << convertStringToInt("0b0101");
-	cout << convertStringToInt("25");
+	cout << convertStringToInt("25");*/
+	
+	parser->parseOrg("ORG 0x20");
+	parser->parseSection(".text");
+	parser->write();
+
 
 	return 0;
 }
