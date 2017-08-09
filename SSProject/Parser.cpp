@@ -63,7 +63,7 @@ void Parser::parseSection(string line)
 	SymbolList->push_back(section);
 	
 	/*SymbolTable* section = new Section(line);
-	previous = current;
+	//previous = current;
 	current = section;
 	if(previous->getName=="ORG")
 		section->setOffset(orgValue);
