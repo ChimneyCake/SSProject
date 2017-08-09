@@ -5,10 +5,6 @@ Parser::Parser(string path)
 	this->path = path;
 	//this->inputFile = new ifstream(path);
 	//section = "";
-	locationCounterText = 0;
-	locationCounterData = 0;
-	locationCounterRoData = 0;
-	locationCounterBss = 0;
 }
 
 void Parser::parseFile()
@@ -58,7 +54,7 @@ void Parser::parseSection(string line)
 		((Section*)(section))->setOrgFlag(false);
 	}
 	section->setSection((Section*)section);
-	section->setType("SEG");
+	((Section*)section)->setType("SEG");
 
 	SymbolList->push_back(section);
 	
@@ -98,13 +94,44 @@ void Parser::write()
 
 void Parser::parseLabel(string line)
 {
-	string tmp = line.substr(0, line.length() - 1);
-	SymbolTable* label = new SymbolTable(tmp);
-	label->setSection(tmpSection);
-	if (tmpSection->getOrgFlag == true)
-		label->setOffset(orgValue);
+	string s= line.substr(0, line.find(" "));
+	size_t position = line.find(" ");
+	string more = line.substr(position+1, line.length() - s.length());//something has to be done with this
+
+	SymbolTable* sym = new Symbol(s);
+	previous = current;
+	current = sym;
+	sym->setSection(tmpSection);
+	((Symbol*)sym)->setType("SYM");
+	if (sym->getSection()->getOrgFlag() == true)
+		sym->setOffset(orgValue+sym->getSection()->getLocationCounter());
 	else
-		label->setOffset(0);
-	label->setType("SYM");
-	SymbolList->push_back(label);
+		sym->setOffset(sym->getSection()->getLocationCounter());
+
+	SymbolList->push_back(sym);
+
+	if (isData(more))
+		data(more);
+	else
+		instruction(more);
 }
+
+void Parser::data(string line)
+{
+	if (line.substr(0, 2) == "DB")
+		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 1);
+	if (line.substr(0, 2) == "DW")
+		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 2);
+	if (line.substr(0, 2) == "DD")
+		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
+}
+
+void Parser::instruction(string line)
+{
+	if (isArithmeticInstruction(line))
+		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 8);
+
+
+}
+
+

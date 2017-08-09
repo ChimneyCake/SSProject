@@ -6,13 +6,13 @@
 using namespace std;
 
 class Section;
+class Symbol;
 
 class SymbolTable
 {
 private:
 	static int statid;
 	string name;
-	string type;//SEG/SYM
 	Section *section;//maybe it's better to have a class for section, not just string
 	int offset;
 	unsigned int id = statid++;
@@ -26,8 +26,8 @@ public:
 	string getName();
 	void setName(string);
 
-	string getType();
-	void setType(string);
+	/*string getType();
+	void setType(string);*/
 
 	int getOffset();
 	void setOffset(int);
@@ -45,11 +45,34 @@ public:
 class Section :public SymbolTable {
 private:
 	bool orgFlag;
+	string type;
+	unsigned int locationCounter;
 public:
 	Section(string);
 	~Section(){}
 	bool getOrgFlag();
 	void setOrgFlag(bool);
+	string getType();
+	void setType(string type);
+	unsigned int getLocationCounter();
+	void setLocationCounter(unsigned int);
+};
+
+class Symbol :public SymbolTable {
+private:
+	string type;
+	int idSection;
+	int value;
+public:
+	Symbol(string);
+	~Symbol() {};
+	string getType();
+	void setType(string);
+	int getIdSection();
+	void setIdSection(int);
+	int getValue();
+	void setValue(int);
+
 };
 
 #endif

@@ -18,7 +18,7 @@ void SymbolTable::setName(string name)
 	this->name = name;
 }
 
-string SymbolTable::getType()
+/*string SymbolTable::getType()
 {
 	return this->type;
 }
@@ -26,7 +26,7 @@ string SymbolTable::getType()
 void SymbolTable::setType(string type)
 {
 	this->type = type;
-}
+}*/
 
 Section* SymbolTable::getSection()
 {
@@ -71,6 +71,18 @@ void SymbolTable::setScope(string scope)
 Section::Section(string name) :SymbolTable(name)
 {
 	orgFlag = 0;
+	type = "SEG";
+	locationCounter = 0;
+}
+
+unsigned int Section::getLocationCounter()
+{
+	return locationCounter;
+}
+
+void Section::setLocationCounter(unsigned int count)
+{
+	this->locationCounter = count;
 }
 
 bool Section::getOrgFlag()
@@ -81,4 +93,49 @@ bool Section::getOrgFlag()
 void Section::setOrgFlag(bool flag)
 {
 	orgFlag = flag;
+}
+
+string Section::getType()
+{
+	return type;
+}
+
+void Section::setType(string type)
+{
+	this->type = type;
+}
+
+Symbol::Symbol(string name) :SymbolTable(name)
+{
+	type = "SYM";
+}
+
+string Symbol::getType()
+{
+	return type;
+}
+
+void Symbol::setType(string type)
+{
+	this->type = type;
+}
+
+int Symbol::getIdSection()
+{
+	return idSection;
+}
+
+void Symbol::setIdSection(int idSec)
+{
+	this->idSection = idSec;
+}
+
+int Symbol::getValue()
+{
+	return value;
+}
+
+void Symbol::setValue(int val)
+{
+	this->value = value;
 }

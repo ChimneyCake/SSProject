@@ -42,7 +42,10 @@ int main()
 	parser->parseOrg("ORG 0x20");
 	parser->parseSection(".text");
 	parser->write();
+	cout << endl;
+	cout << isLabel("Ksenija:")<<endl;
 
+	parser->parseLabel("Ksenija:");
 
 	return 0;
 }
