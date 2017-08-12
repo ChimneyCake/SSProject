@@ -1,1 +1,4 @@
-.text.dataa:.text1
+.text
+.data
+a:
+.text1

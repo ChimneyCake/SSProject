@@ -32,7 +32,7 @@ void Parser::parseFile()
 	}
 	inputFile.close();
 	writeInFile();
-	write();
+	//write();
 }
 
 void Parser::writeInFile()
@@ -42,9 +42,11 @@ void Parser::writeInFile()
 	list<SymbolTable*>::iterator it;
 	for (it = SymbolList->begin(); it != SymbolList->end(); ++it)
 	{
+		outputFile.write((*it)->getName().c_str(), (*it)->getName().length());
+		outputFile.write("\n", 1);
 		cout << "NAME:";
 		cout << (*it)->getName() << endl;
-		outputFile.write(((*it)->getName()).c_str(), (*it)->getName().length());
+		//outputFile.write(((*it)->getName()).c_str(), (*it)->getName().length());
 		cout << "ORGED?";
 		cout << (*it)->getSection()->getOrgFlag() << endl;
 	}

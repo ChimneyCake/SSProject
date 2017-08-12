@@ -24,7 +24,7 @@ public:
 	Parser(string path);
 	~Parser() {};
 	void parseFile();
-	void parse(string&);
+	void parse(string&);//first pass
 	void writeInFile();
 
 	void write();//just for testing
