@@ -18,6 +18,15 @@ void SymbolTable::setName(string name)
 	this->name = name;
 }
 
+bool SymbolTable::getIsSection()
+{
+	return isSection;
+}
+
+void SymbolTable::setIsSection(bool isSection)
+{
+	this->isSection = isSection;
+}
 /*string SymbolTable::getType()
 {
 	return this->type;
@@ -73,6 +82,7 @@ Section::Section(string name) :SymbolTable(name)
 	orgFlag = 0;
 	type = "SEG";
 	locationCounter = 0;
+	setIsSection(1);
 }
 
 unsigned int Section::getLocationCounter()
@@ -108,6 +118,7 @@ void Section::setType(string type)
 Symbol::Symbol(string name) :SymbolTable(name)
 {
 	type = "SYM";
+	setIsSection(0);
 }
 
 string Symbol::getType()

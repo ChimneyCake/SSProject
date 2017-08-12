@@ -3,30 +3,67 @@
 Parser::Parser(string path)
 {
 	this->path = path;
+	//inputFile(path);
 	//this->inputFile = new ifstream(path);
 	//section = "";
 }
 
+void Parser::setTmpSection(Section* section)
+{
+	this->tmpSection = section;
+}
+
+Section* Parser::getTmpSection()
+{
+	return tmpSection;
+}
+
 void Parser::parseFile()
 {
+	ifstream inputFile(path);
 	string line;
-	inputFile->open(path);
-	while (!inputFile->eof())
+	while (!inputFile.eof())
 	{
-		getline(*inputFile, line);
-		parse(line);
+		getline(inputFile, line);
+		if (line != "")
+			parse(line);
+		else
+			continue;
 	}
-	inputFile->close();
+	inputFile.close();
+	writeInFile();
+	write();
+}
+
+void Parser::writeInFile()
+{
+	ofstream outputFile;
+	outputFile.open("res.txt");
+	list<SymbolTable*>::iterator it;
+	for (it = SymbolList->begin(); it != SymbolList->end(); ++it)
+	{
+		cout << "NAME:";
+		cout << (*it)->getName() << endl;
+		outputFile.write(((*it)->getName()).c_str(), (*it)->getName().length());
+		cout << "ORGED?";
+		cout << (*it)->getSection()->getOrgFlag() << endl;
+	}
+	outputFile.close();
 }
 
 void Parser::parse(string& line)
 {
 	if (isOrg(line))
 		parseOrg(line);
-	if (isSection(line))
+	else if (isSection(line))
 		parseSection(line);
-	if (isLabel(line))
+	else if (isLabel(line))
 		parseLabel(line);
+	else if (isData(line))
+		data(line);
+	else
+		instruction(line);
+
 }
 
 void Parser::parseOrg(string line)
@@ -78,18 +115,27 @@ void Parser::parseSection(string line)
 
 void Parser::write()
 {
-	SymbolTable* sym = SymbolList->front();
+	/*SymbolTable* sym = SymbolList->front();
 	cout << "NAME:";
 	cout << sym->getName() << endl;
 	cout << "IS ORG?:";
 	cout << ((Section*)sym)->getOrgFlag() << endl;
-	sectionName(sym->getSection()->getName());
+	sym->getSection()->setName(sectionName(sym->getSection()->getName()));
+	//sectionName(sym->getSection()->getName());
 	cout << "SECTION NAME:";
 	cout << sym->getSection()->getName() << endl;
 	cout << "SCOPE:";
 	cout << sym->getScope() << endl;
 	cout << "OFFSET:";
-	cout << sym->getOffset() << endl;
+	cout << sym->getOffset() << endl;*/
+	list<SymbolTable*>::iterator it;
+	for ( it= SymbolList->begin(); it != SymbolList->end(); ++it)
+	{
+		cout << "NAME:";
+		cout<<(*it)->getName()<<endl;
+		cout << "ORGED?";
+		cout << (*it)->getSection()->getOrgFlag()<<endl;
+	}
 }
 
 void Parser::parseLabel(string line)
@@ -109,7 +155,7 @@ void Parser::parseLabel(string line)
 		sym->setOffset(sym->getSection()->getLocationCounter());
 
 	SymbolList->push_back(sym);
-
+	((Symbol*)sym)->setIdSection(tmpSection->getId());
 	if (isData(more))
 		data(more);
 	else
@@ -128,10 +174,39 @@ void Parser::data(string line)
 
 void Parser::instruction(string line)
 {
-	if (isArithmeticInstruction(line))
+	string instruction = line.substr(0, line.find(" "));
+
+	if (isArithmeticInstruction(instruction))
 		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 8);
 
+	if (isNoOperandInstruction(instruction))
+		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
 
+	if (isOneOperandInstruction(instruction))
+	{
+		size_t position = line.find(" ");
+		string addressMode = line.substr(position + 1, line.length() - 1 - instruction.length());
+		if (isRegdir(addressMode) || isRegInd(addressMode))
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
+		else
+			if (isImmed(addressMode) || isMemdir(addressMode) || isRegindDisp(addressMode) || isPCRelative(addressMode))
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 8);
+			
+	}
+
+	if (isTwoOPerandsInsttruction(instruction))
+	{
+		size_t position = line.find(" ");
+		position = line.find(" ", position + 1);
+		string addressMode = line.substr(position, std::string::npos);
+		if (isRegdir(addressMode) || isRegInd(addressMode))
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
+		else
+			if(isMemdir(addressMode) || isRegindDisp(addressMode) || isPCRelative(addressMode))
+				tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 8);
+	}
+
+	
 }
 
 

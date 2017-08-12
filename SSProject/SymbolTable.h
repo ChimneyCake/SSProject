@@ -17,7 +17,7 @@ private:
 	int offset;
 	unsigned int id = statid++;
 	string scope;//local or global
-
+	bool isSection;
 public:
 
 	SymbolTable(string);
@@ -40,6 +40,9 @@ public:
 
 	Section* getSection();
 	void setSection(Section*);
+
+	bool getIsSection();//1 for section, 0 for symbol
+	void setIsSection(bool);
 };
 
 class Section :public SymbolTable {

@@ -5,13 +5,14 @@
 #include <string>
 #include "Const.h"
 #include <iostream>
+#include <iterator>
 
 using namespace std;
 
 class Parser {
 private:
 	string path;
-	ifstream* inputFile;
+	//ifstream inputFile;
 	//string section;
 	SymbolTable* current;
 	SymbolTable* previous;
@@ -24,7 +25,7 @@ public:
 	~Parser() {};
 	void parseFile();
 	void parse(string&);
-	void writeInFile(ofstream);
+	void writeInFile();
 
 	void write();//just for testing
 
@@ -34,6 +35,9 @@ public:
 
 	void data(string);
 	void instruction(string);
+
+	void setTmpSection(Section*);
+	Section* getTmpSection();
 
 };
 

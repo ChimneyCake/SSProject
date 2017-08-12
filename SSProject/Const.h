@@ -19,6 +19,7 @@ static vector<string> NoOperandInstructions = { "RET" };
 static vector<string> OneOperandInstructions = {"INT","JMP", "CALL","PUSH", "POP"};
 static vector<string> TwoOperandsInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ", "NOT", "LOAD", "STORE" };
 static vector<string> ThreeOperandsInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR",  "ASL", "ASR" };
+static vector<string> JumpInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ" };
 static map<string, int> OperationCodes = { {"INT", 0x00}, {"JMP", 0x02}, {"CALL", 0x03}, {"RET", 0x01}, {"JZ", 0x04},{"JNZ", 0x05}, {"JGZ", 0x06}, {"JGEZ", 0x07}, {"JLZ", 0x08}, {"JLEZ", 0x09}, {"LOAD", 0x10}, {"STORE", 0x11},{"PUSH", 0x20},{"POP", 0x21}, {"ADD", 0x20}, {"SUB", 0x20}, {"MUL", 0x21}, {"DIV", 0x22}, {"MOD", 0x23}, {"AND", 0x24}, {"OR", 0x25}, {"XOR", 0x24}, {"NOT", 0x25}, {"ASL", 0x26}, {"ASR", 0x26} };
 static map<string, int> RegisterCodes = { {"R0", 0x00}, {"R1", 0x01}, {"R2", 0x02}, {"R3", 0x03}, {"R4", 0x04}, {"R5", 0x05}, {"R6", 0x06}, {"R7", 0x07}, {"R8", 0x08}, {"R9", 0x09}, {"R10", 0x0A}, {"R11", 0x0B}, {"R12", 0x0C}, {"R13", 0x0D}, {"R14", 0x0E}, {"R15", 0x0F} };
 static map<string, int> AddressModeCodes = { {"immed", 0b100}, {"regdir", 0b000}, {"memdir", 0b110}, {"regind", 0b010}, {"reginddisp", 0b111} };
@@ -31,11 +32,11 @@ static vector<string> ArithmeticInstructions = { "ADD", "SUB", "MUL", "DIV", "AN
 static map<string, int> DataTypeCodes = { {"DW", 0b000}, {"WZ", 0b001}, {"WS", 0b101}, {"BZ", 0b011}, {"BS", 0b111} };
 static list<SymbolTable*>* SymbolList = new list<SymbolTable*>();
 
-static string removeSpace(string text)
+/*static string removeSpace(string text)
 {
 	text.erase(remove_if(text.begin(), text.end(), isspace), text.end());
 	return text;
-}
+}*/
 
 static void toUpper(string &text)
 {
@@ -64,7 +65,7 @@ static bool isSection(string text)
 static bool isOrg(string text)
 {
 	toUpper(text);
-	if (text.substr(0, 4) == ".ORG")
+	if (text.substr(0, 3) == "ORG")
 		return true;
 	else
 		return false;
@@ -73,7 +74,6 @@ static bool isOrg(string text)
 static bool isLabel(string text)
 {
 	string s = text.substr(0, text.find(" "));
-	cout << s << endl;
 	if (s[s.length()-1] == ':')
 		return true;
 	else 
@@ -98,21 +98,24 @@ static bool isPCRelative(string opCode)
 
 static bool isRegInd(string opCode)
 {
-	opCode = removeSpace(opCode);
+	toUpper(opCode);
+	//opCode = removeSpace(opCode);
 	regex regind("\\[R[[:digit:]][0-5]?\\]");
 	return regex_match(opCode, regind);
 }
 
 static bool isRegdir(string opCode)
 {
-	opCode = removeSpace(opCode);
+	toUpper(opCode);
+	//opCode = removeSpace(opCode);
 	regex regdir("R[[:digit:]][0-5]?");
 	return regex_match(opCode, regdir);
 }
 
 static bool isRegindDisp(string opCode)
 {
-	opCode = removeSpace(opCode);
+	toUpper(opCode);
+	//opCode = removeSpace(opCode);
 	regex reginddisp("\\[R[[:digit:]][0-5]?\\+[[:digit:]]+\\]");
 	return regex_match(opCode, reginddisp);
 }
@@ -215,17 +218,19 @@ static int convertStringToInt(string text)
 			return atoi(text.c_str());
 }
 
-static void sectionName(string &text)
+static string sectionName(string text)
 {
 	toUpper(text);
 	if (text.substr(0, 7) == ".RODATA") text=".RODATA";
 	if (text.substr(0, 5) == ".DATA") text = ".DATA";
 	if (text.substr(0, 5) == ".TEXT") text=".TEXT";
 	if (text.substr(0, 4) == ".BSS") text=".BSS";
+	return text;
 }
 
 static bool isData(string text)
 {
+	toUpper(text);
 	if (text.substr(0, 2) == "DB" || text.substr(0, 2) == "DW" || text.substr(0, 2) == "DD")
 		return true;
 	else
@@ -237,6 +242,15 @@ static bool isArithmeticInstruction(string instruction)
 	toUpper(instruction);
 	for (int i = 0; i < ArithmeticInstructions.size(); i++)
 		if (ArithmeticInstructions.at(i) == instruction)
+			return true;
+	return false;
+}
+
+static bool isJumpInstruction(string instruction)
+{
+	toUpper(instruction);
+	for (int i = 0; i < JumpInstructions.size(); i++)
+		if (JumpInstructions.at(i) == instruction)
 			return true;
 	return false;
 }
