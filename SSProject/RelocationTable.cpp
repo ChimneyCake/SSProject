@@ -9,6 +9,7 @@ Section* RelocationTable::getSection()
 {
 	return this->section;
 }
+
 void RelocationTable::setSection(Section* section)
 {
 	this->section = section;
@@ -18,6 +19,7 @@ int RelocationTable::getOffset()
 {
 	return this->offset;
 }
+
 void RelocationTable::setOffset(int offset)
 {
 	this->offset = offset;

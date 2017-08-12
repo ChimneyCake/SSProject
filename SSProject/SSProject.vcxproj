@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Const.h" />
+    <ClInclude Include="SecondRound.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="RelocationTable.h" />
     <ClInclude Include="SymbolTable.h" />
@@ -155,6 +156,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="RelocationTable.cpp" />
+    <ClCompile Include="SecondRound.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

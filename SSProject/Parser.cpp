@@ -57,6 +57,8 @@ void Parser::parse(string& line)
 {
 	if (isOrg(line))
 		parseOrg(line);
+	else if (isGlobal(line))
+		parseGlobal(line);
 	else if (isSection(line))
 		parseSection(line);
 	else if (isLabel(line))
@@ -66,6 +68,12 @@ void Parser::parse(string& line)
 	else
 		instruction(line);
 
+}
+
+void Parser::parseGlobal(string line)
+{
+	string label = line.substr(9, line.length() - 9);
+	parseLabel(label);
 }
 
 void Parser::parseOrg(string line)
@@ -96,22 +104,9 @@ void Parser::parseSection(string line)
 	((Section*)section)->setType("SEG");
 
 	SymbolList->push_back(section);
-	
-	/*SymbolTable* section = new Section(line);
-	//previous = current;
-	current = section;
-	if(previous->getName=="ORG")
-		section->setOffset(orgValue);
-	else
-		section->setOffset(0);
 
-	section->setType("SEG");
-	
-	string tmp = line;
-	toUpper(tmp);
-	this->section = tmp.substr(1, tmp.length() - 1);//this->section is the name of section 
-	//section->setSection(this->section);
-	SymbolList->push_back(section);*/
+	if (((Section*)section)->getOrgFlag() == 1)
+		OrgedSections->push_back((Section*)section);
 
 }
 
@@ -155,9 +150,13 @@ void Parser::parseLabel(string line)
 		sym->setOffset(orgValue+sym->getSection()->getLocationCounter());
 	else
 		sym->setOffset(sym->getSection()->getLocationCounter());
-
-	SymbolList->push_back(sym);
 	((Symbol*)sym)->setIdSection(tmpSection->getId());
+	if(!isInSymbols(sym->getName()))
+	{
+		SymbolList->push_back(sym);
+		Symbols->push_back((Symbol*)sym);
+	}
+	
 	if (isData(more))
 		data(more);
 	else

@@ -2,9 +2,11 @@
 #define SymbolTable_
 
 #include <string>
+#include "RelocationTable.h"
 
 using namespace std;
 
+class RelocationTable;
 class Section;
 class Symbol;
 

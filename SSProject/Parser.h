@@ -12,8 +12,6 @@ using namespace std;
 class Parser {
 private:
 	string path;
-	//ifstream inputFile;
-	//string section;
 	SymbolTable* current;
 	SymbolTable* previous;
 	int orgValue;
@@ -32,6 +30,7 @@ public:
 	void parseOrg(string);
 	void parseSection(string);
 	void parseLabel(string);
+	void parseGlobal(string);
 
 	void data(string);
 	void instruction(string);

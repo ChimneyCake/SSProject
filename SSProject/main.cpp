@@ -3,6 +3,7 @@
 #include <iostream>
 #include "SymbolTable.h"
 #include "Parser.h"
+#include <sstream>
 
 using namespace std;
 int main()
@@ -60,5 +61,8 @@ int main()
 	parser->instruction("JlEz R4 [R5+4]");
 	int xx=parser->getTmpSection()->getLocationCounter();
 	cout << xx << endl;*/
+
+	cout << HexadecimalNumbers.at(OperationCodes.at("JLZ"));
+
 	return 0;
 }
