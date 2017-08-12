@@ -30,6 +30,9 @@
     <ClInclude Include="SecondRound.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Content.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SymbolTable.cpp">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SecondRound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Content.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

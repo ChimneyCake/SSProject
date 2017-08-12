@@ -147,12 +147,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Const.h" />
+    <ClInclude Include="Content.h" />
     <ClInclude Include="SecondRound.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="RelocationTable.h" />
     <ClInclude Include="SymbolTable.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Content.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="RelocationTable.cpp" />
