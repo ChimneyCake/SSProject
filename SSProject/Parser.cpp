@@ -3,9 +3,6 @@
 Parser::Parser(string path)
 {
 	this->path = path;
-	//inputFile(path);
-	//this->inputFile = new ifstream(path);
-	//section = "";
 }
 
 void Parser::setTmpSection(Section* section)
@@ -26,13 +23,40 @@ void Parser::parseFile()
 	{
 		getline(inputFile, line);
 		if (line != "")
+			
 			parse(line);
+		else
+			continue;
+	}
+	inputFile.clear();
+	inputFile.seekg(0, ios::beg);
+	while (!inputFile.eof())
+	{
+		getline(inputFile, line);
+		if (line != " ")
+		{
+			relocate(line);
+			fillSection(line);
+		}
 		else
 			continue;
 	}
 	inputFile.close();
 	writeInFile();
-	//write();
+}
+
+void Parser::fillSection(string line)
+{
+
+}
+
+void Parser::relocate(string line)
+{
+	if (isSection(line))
+	{
+		tmpSection = findSectionByName(line);
+		cout << tmpSection->getName();
+	}
 }
 
 void Parser::writeInFile()
@@ -40,15 +64,44 @@ void Parser::writeInFile()
 	ofstream outputFile;
 	outputFile.open("res.txt");
 	list<SymbolTable*>::iterator it;
+	outputFile.write("#TabelaSimbola", 14);
+	outputFile.write("\n", 1);
 	for (it = SymbolList->begin(); it != SymbolList->end(); ++it)
 	{
+		if ((*it)->getIsSection() == true)
+			outputFile.write("SEG", 3);
+		else
+			outputFile.write("SYM", 3);
+		outputFile.write(" ", 1);
+
+		unsigned int id = ((*it)->getId());
+		stringstream idss;
+		idss << id;
+		string ids = idss.str();
+
+		outputFile.write(ids.c_str(), ids.length());
+		outputFile.write(" ", 1);
+
 		outputFile.write((*it)->getName().c_str(), (*it)->getName().length());
+		outputFile.write(" ", 1);
+
+		unsigned int idsec = ((*it)->getSection())->getId();
+		stringstream idsecss;
+		idsecss << idsec;
+		string idsecs = idsecss.str();
+
+		outputFile.write(idsecs.c_str(), idsecs.length());
+		outputFile.write(" ", 1);
+
+		int offset = (*it)->getOffset();
+		stringstream offsetss;
+		offsetss << offset;
+		string offsets = offsetss.str();
+
+		outputFile.write(offsets.c_str(), offsets.length());
+
+
 		outputFile.write("\n", 1);
-		cout << "NAME:";
-		cout << (*it)->getName() << endl;
-		//outputFile.write(((*it)->getName()).c_str(), (*it)->getName().length());
-		cout << "ORGED?";
-		cout << (*it)->getSection()->getOrgFlag() << endl;
 	}
 	outputFile.close();
 }
@@ -103,41 +156,19 @@ void Parser::parseSection(string line)
 	section->setSection((Section*)section);
 	((Section*)section)->setType("SEG");
 
+	section->setIsSection(true);
+
 	SymbolList->push_back(section);
+	SectionList->push_back((Section*)section);
 
 	if (((Section*)section)->getOrgFlag() == 1)
 		OrgedSections->push_back((Section*)section);
 
 }
 
-void Parser::write()
-{
-	/*SymbolTable* sym = SymbolList->front();
-	cout << "NAME:";
-	cout << sym->getName() << endl;
-	cout << "IS ORG?:";
-	cout << ((Section*)sym)->getOrgFlag() << endl;
-	sym->getSection()->setName(sectionName(sym->getSection()->getName()));
-	//sectionName(sym->getSection()->getName());
-	cout << "SECTION NAME:";
-	cout << sym->getSection()->getName() << endl;
-	cout << "SCOPE:";
-	cout << sym->getScope() << endl;
-	cout << "OFFSET:";
-	cout << sym->getOffset() << endl;*/
-	list<SymbolTable*>::iterator it;
-	for ( it= SymbolList->begin(); it != SymbolList->end(); ++it)
-	{
-		cout << "NAME:";
-		cout<<(*it)->getName()<<endl;
-		cout << "ORGED?";
-		cout << (*it)->getSection()->getOrgFlag()<<endl;
-	}
-}
-
 void Parser::parseLabel(string line)
 {
-	string s= line.substr(0, line.find(" "));
+	string s= line.substr(0, line.find(":"));
 	size_t position = line.find(" ");
 	string more = line.substr(position+1, line.length() - s.length());//something has to be done with this
 

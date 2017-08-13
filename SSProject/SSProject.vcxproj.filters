@@ -27,9 +27,6 @@
     <ClInclude Include="RelocationTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SecondRound.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Content.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -45,9 +42,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RelocationTable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SecondRound.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Content.cpp">

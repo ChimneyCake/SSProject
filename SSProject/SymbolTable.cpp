@@ -6,6 +6,7 @@ SymbolTable::SymbolTable(string name)
 {
 	this->name = name;
 	this->scope = "local";
+	this->isSection = false;
 }
 
 string SymbolTable::getName()
@@ -84,6 +85,26 @@ Section::Section(string name) :SymbolTable(name)
 	locationCounter = 0;
 	setIsSection(1);
 }
+
+//RelocationTable* Section::getRelocTable()
+//{
+//	return this->relocTable;
+//}
+//
+//void Section::setRelocTable(RelocationTable* reloc)
+//{
+//	this->relocTable = reloc;
+//}
+//
+//Content* Section::getContent()
+//{
+//	return this->content;
+//}
+//
+//void Section::setContent(Content* content)
+//{
+//	this->content = content;
+//}
 
 unsigned int Section::getLocationCounter()
 {

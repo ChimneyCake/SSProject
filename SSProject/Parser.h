@@ -6,12 +6,19 @@
 #include "Const.h"
 #include <iostream>
 #include <iterator>
+#include <sstream>
+#include "RelocationTable.h"
+#include "Content.h"
 
 using namespace std;
+
+class RelocationTable;
+class Content;
 
 class Parser {
 private:
 	string path;
+
 	SymbolTable* current;
 	SymbolTable* previous;
 	int orgValue;
@@ -19,13 +26,14 @@ private:
 	Section* tmpSection;
 
 public:
+
 	Parser(string path);
 	~Parser() {};
 	void parseFile();
 	void parse(string&);//first pass
 	void writeInFile();
-
-	void write();//just for testing
+	void relocate(string);
+	void fillSection(string);
 
 	void parseOrg(string);
 	void parseSection(string);

@@ -3,9 +3,11 @@
 
 #include <string>
 #include "RelocationTable.h"
+#include "Content.h"
 
 using namespace std;
 
+class Content;
 class RelocationTable;
 class Section;
 class Symbol;
@@ -28,8 +30,7 @@ public:
 	string getName();
 	void setName(string);
 
-	/*string getType();
-	void setType(string);*/
+	
 
 	int getOffset();
 	void setOffset(int);
@@ -52,6 +53,8 @@ private:
 	bool orgFlag;
 	string type;
 	unsigned int locationCounter;
+	//RelocationTable* relocTable;
+	//Content* content;
 public:
 	Section(string);
 	~Section(){}
@@ -61,6 +64,12 @@ public:
 	void setType(string type);
 	unsigned int getLocationCounter();
 	void setLocationCounter(unsigned int);
+
+	/*RelocationTable* getRelocTable();
+	void setRelocTable(RelocationTable*);
+
+	Content* getContent();
+	void setContent(Content*);*/
 };
 
 class Symbol :public SymbolTable {

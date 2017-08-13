@@ -5,9 +5,13 @@
 #include <map>
 #include <regex>
 #include <list>
+#include <sstream>
+#include <iomanip>
 #include <cstdlib>
 #include "SymbolTable.h"
 #include <iostream>
+#include "RelocationTable.h"
+#include "Content.h"
 
 using namespace std;
 
@@ -20,26 +24,26 @@ static vector<string> OneOperandInstructions = {"INT","JMP", "CALL","PUSH", "POP
 static vector<string> TwoOperandsInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ", "NOT", "LOAD", "STORE" };
 static vector<string> ThreeOperandsInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR",  "ASL", "ASR" };
 static vector<string> JumpInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ" };
-static map<int, string> HexadecimalNumbers = { {0, "0x00"}, {1, "0x01"}, {2, "0x02"}, {3, "0x03"}, {4, "0x04"}, {5, "0x05"}, {6, "0x06"}, {7, "0x07"}, {8, "0x08"}, {9, "0x09"}, {10, "0x0A"}, {11, "0x0B"}, {12, "0x0C"}, {13, "0x0D"}, {14, "0x0E"}, {15, "0x0F"} };
+static vector<string> ArithmeticInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR", "NOT", "ASL", "ASR" };
+
+//static map<int, string> HexadecimalNumbers = { {0, "0x00"}, {1, "0x01"}, {2, "0x02"}, {3, "0x03"}, {4, "0x04"}, {5, "0x05"}, {6, "0x06"}, {7, "0x07"}, {8, "0x08"}, {9, "0x09"}, {10, "0x0A"}, {11, "0x0B"}, {12, "0x0C"}, {13, "0x0D"}, {14, "0x0E"}, {15, "0x0F"} };
 static map<string, int> OperationCodes = { {"INT", 0x00}, {"JMP", 0x02}, {"CALL", 0x03}, {"RET", 0x01}, {"JZ", 0x04},{"JNZ", 0x05}, {"JGZ", 0x06}, {"JGEZ", 0x07}, {"JLZ", 0x08}, {"JLEZ", 0x09}, {"LOAD", 0x10}, {"STORE", 0x11},{"PUSH", 0x20},{"POP", 0x21}, {"ADD", 0x20}, {"SUB", 0x20}, {"MUL", 0x21}, {"DIV", 0x22}, {"MOD", 0x23}, {"AND", 0x24}, {"OR", 0x25}, {"XOR", 0x24}, {"NOT", 0x25}, {"ASL", 0x26}, {"ASR", 0x26} };
 static map<string, int> RegisterCodes = { {"R0", 0x00}, {"R1", 0x01}, {"R2", 0x02}, {"R3", 0x03}, {"R4", 0x04}, {"R5", 0x05}, {"R6", 0x06}, {"R7", 0x07}, {"R8", 0x08}, {"R9", 0x09}, {"R10", 0x0A}, {"R11", 0x0B}, {"R12", 0x0C}, {"R13", 0x0D}, {"R14", 0x0E}, {"R15", 0x0F} };
 static map<string, int> AddressModeCodes = { {"immed", 0b100}, {"regdir", 0b000}, {"memdir", 0b110}, {"regind", 0b010}, {"reginddisp", 0b111} };
-static vector<string> ArithmeticInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR", "NOT", "ASL", "ASR" };
-//DW-double word
-//WZ-word expanded with zeros
-//WS-word expanded with sign
-//BZ-byte expanded with zeros
-//BS-byte expanded with sign
+//static map<string, string> RegCodes = { {"R0", "0x00"}, {"R1", "0x01"}, {"R2", "0x02"}, {"R3", "0x03"}, {"R4", "0x04"}, {"R5", "0x05"}, {"R6", "0x06"}, {"R7", "0x07"}, {"R8", "0x08"}, {"R9", "0x09"}, {"R10", "0x0A"}, {"R11", "0x0B"}, {"R12", "0x0C"}, {"R13", "0x0D"}, {"R14", "0x0E"}, {"R15", "0x0F"}, {"PC", "0x10"}, {"SP", "0x11"} };
 static map<string, int> DataTypeCodes = { {"DW", 0b000}, {"WZ", 0b001}, {"WS", 0b101}, {"BZ", 0b011}, {"BS", 0b111} };
-static list<SymbolTable*>* SymbolList = new list<SymbolTable*>();
-static list<Section*>* OrgedSections = new list<Section*>();
-static list<Symbol*>* Symbols = new list<Symbol*>();
 
-/*static string removeSpace(string text)
-{
-	text.erase(remove_if(text.begin(), text.end(), isspace), text.end());
-	return text;
-}*/
+static list<SymbolTable*>* SymbolList = new list<SymbolTable*>();//list that has to be written is symbol table
+
+static list<Section*>* OrgedSections = new list<Section*>();//list of all "ORG" sections, to check if there is overlaping
+
+static list<Section*>* SectionList = new list<Section*>();//list of all sections
+
+static list<Symbol*>* Symbols = new list<Symbol*>();//list od symbols that are not sections
+
+static list<RelocationTable*>* RelocationTables = new list<RelocationTable*>();//list of all relocation tables
+
+static list<Content*>* Contents = new list<Content*>();//list of all section contents
 
 static void toUpper(string &text)
 {
@@ -49,14 +53,6 @@ static void toUpper(string &text)
 
 static bool isSection(string text)
 {
-	/*for (int i = 0; i < text.length(); i++)
-		text[i] = toupper(text[i]);
-	for (int i = 0; i < Sections.size(); i++)
-	{
-		if (text == Sections.at(i))
-			return true;
-	}
-	return false;*/
 	toUpper(text);
 	if (text.substr(0, 7) == ".RODATA") return true;
 	if (text.substr(0, 5) == ".DATA") return true;
@@ -102,7 +98,6 @@ static bool isPCRelative(string opCode)
 static bool isRegInd(string opCode)
 {
 	toUpper(opCode);
-	//opCode = removeSpace(opCode);
 	regex regind("\\[R[[:digit:]][0-5]?\\]");
 	return regex_match(opCode, regind);
 }
@@ -110,7 +105,6 @@ static bool isRegInd(string opCode)
 static bool isRegdir(string opCode)
 {
 	toUpper(opCode);
-	//opCode = removeSpace(opCode);
 	regex regdir("R[[:digit:]][0-5]?");
 	return regex_match(opCode, regdir);
 }
@@ -118,7 +112,6 @@ static bool isRegdir(string opCode)
 static bool isRegindDisp(string opCode)
 {
 	toUpper(opCode);
-	//opCode = removeSpace(opCode);
 	regex reginddisp("\\[R[[:digit:]][0-5]?\\+[[:digit:]]+\\]");
 	return regex_match(opCode, reginddisp);
 }
@@ -282,13 +275,42 @@ static bool isGlobal(string text)
 static bool isInSymbols(string name)
 {
 	list<Symbol*>::iterator it;
-	Symbol* elem;
+	//Symbol* elem;
 	for (it = Symbols->begin(); it != Symbols->end(); ++it)
 	{
 		if ((*it)->getName() == name)
 			return true;
 	}
 	return false;
+}
+
+static Section* findSectionByName(string name)//find section by it's name
+{
+	list<Section*>::iterator it;
+	for (it = SectionList->begin(); it != SectionList->end(); ++it)
+	{
+		if ((*it)->getName() == name)
+			return *it;
+	}
+	return NULL;
+}
+
+static string intAsHex(int x)
+{
+	std::stringstream stream;
+	stream << std::hex << x;
+	std::string result(stream.str());
+	string a;
+	if (result.length() < 8)
+	{
+		int i = result.length();
+		while (i < 8) {
+			a.append("0");
+			i++;
+		}
+	}
+	a.append(result);
+	return a;
 }
 
 static bool checkOrgOverlaping(int begin, int size)
