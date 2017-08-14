@@ -80,7 +80,7 @@ void SymbolTable::setScope(string scope)
 
 Section::Section(string name) :SymbolTable(name)
 {
-	orgFlag = 0;
+	orgFlag = false;
 	type = "SEG";
 	locationCounter = 0;
 	setIsSection(1);

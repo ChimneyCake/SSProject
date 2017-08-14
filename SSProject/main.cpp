@@ -8,12 +8,9 @@ using namespace std;
 int main()
 {
 	
-	
-
-	Parser* parser = new Parser("ksenija.txt");
+	Parser* parser = new Parser("C:\\Users\\Ksenija\\Documents\\Visual Studio 2015\\Projects\\SSProject\\SSProject\\ksenija.txt");
 	parser->parseFile();
 
-	
-	cout << intAsHex(0b01010101);
+	//cout << intAsBinary(3);
 	return 0;
 }

@@ -12,6 +12,7 @@
 #include <iostream>
 #include "RelocationTable.h"
 #include "Content.h"
+#include <bitset>
 
 using namespace std;
 
@@ -21,13 +22,13 @@ static vector<string> SystemDefinedWords = { "DUP", "DEF", "ORG" };
 static vector<string> Scope = { "local", "global" };
 static vector<string> NoOperandInstructions = { "RET" };
 static vector<string> OneOperandInstructions = {"INT","JMP", "CALL","PUSH", "POP"};
-static vector<string> TwoOperandsInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ", "NOT", "LOAD", "STORE" };
+static vector<string> TwoOperandsInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ", "LOAD", "STORE" };
 static vector<string> ThreeOperandsInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR",  "ASL", "ASR" };
 static vector<string> JumpInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ" };
 static vector<string> ArithmeticInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR", "NOT", "ASL", "ASR" };
-
+static vector<string> StackInstructions = { "PUSH", "POP" };
 //static map<int, string> HexadecimalNumbers = { {0, "0x00"}, {1, "0x01"}, {2, "0x02"}, {3, "0x03"}, {4, "0x04"}, {5, "0x05"}, {6, "0x06"}, {7, "0x07"}, {8, "0x08"}, {9, "0x09"}, {10, "0x0A"}, {11, "0x0B"}, {12, "0x0C"}, {13, "0x0D"}, {14, "0x0E"}, {15, "0x0F"} };
-static map<string, int> OperationCodes = { {"INT", 0x00}, {"JMP", 0x02}, {"CALL", 0x03}, {"RET", 0x01}, {"JZ", 0x04},{"JNZ", 0x05}, {"JGZ", 0x06}, {"JGEZ", 0x07}, {"JLZ", 0x08}, {"JLEZ", 0x09}, {"LOAD", 0x10}, {"STORE", 0x11},{"PUSH", 0x20},{"POP", 0x21}, {"ADD", 0x20}, {"SUB", 0x20}, {"MUL", 0x21}, {"DIV", 0x22}, {"MOD", 0x23}, {"AND", 0x24}, {"OR", 0x25}, {"XOR", 0x24}, {"NOT", 0x25}, {"ASL", 0x26}, {"ASR", 0x26} };
+static map<string, int> OperationCodes = { {"INT", 0x00}, {"JMP", 0x02}, {"CALL", 0x03}, {"RET", 0x01}, {"JZ", 0x04},{"JNZ", 0x05}, {"JGZ", 0x06}, {"JGEZ", 0x07}, {"JLZ", 0x08}, {"JLEZ", 0x09}, {"LOAD", 0x10}, {"STORE", 0x11},{"PUSH", 0x20},{"POP", 0x21}, {"ADD", 0x30}, {"SUB", 0x31}, {"MUL", 0x32}, {"DIV", 0x33}, {"MOD", 0x34}, {"AND", 0x35}, {"OR", 0x36}, {"XOR", 0x37}, {"NOT", 0x38}, {"ASL", 0x39}, {"ASR", 0x3A} };
 static map<string, int> RegisterCodes = { {"R0", 0x00}, {"R1", 0x01}, {"R2", 0x02}, {"R3", 0x03}, {"R4", 0x04}, {"R5", 0x05}, {"R6", 0x06}, {"R7", 0x07}, {"R8", 0x08}, {"R9", 0x09}, {"R10", 0x0A}, {"R11", 0x0B}, {"R12", 0x0C}, {"R13", 0x0D}, {"R14", 0x0E}, {"R15", 0x0F} };
 static map<string, int> AddressModeCodes = { {"immed", 0b100}, {"regdir", 0b000}, {"memdir", 0b110}, {"regind", 0b010}, {"reginddisp", 0b111} };
 //static map<string, string> RegCodes = { {"R0", "0x00"}, {"R1", "0x01"}, {"R2", "0x02"}, {"R3", "0x03"}, {"R4", "0x04"}, {"R5", "0x05"}, {"R6", "0x06"}, {"R7", "0x07"}, {"R8", "0x08"}, {"R9", "0x09"}, {"R10", "0x0A"}, {"R11", "0x0B"}, {"R12", "0x0C"}, {"R13", "0x0D"}, {"R14", "0x0E"}, {"R15", "0x0F"}, {"PC", "0x10"}, {"SP", "0x11"} };
@@ -172,6 +173,16 @@ static bool isThreeOperandsInstruction(string text)
 	return false;
 }
 
+static bool isStackInstruction(string text)
+{
+	toUpper(text);
+	string firstWord = text.substr(0, text.find(" "));
+	for (int i = 0; i < StackInstructions.size(); i++)
+		if (StackInstructions.at(i) == firstWord)
+			return true;
+	return false;
+}
+
 static bool isHexadecimal(string text)
 {
 	if (text.substr(0, 2) == "0x")
@@ -295,22 +306,124 @@ static Section* findSectionByName(string name)//find section by it's name
 	return NULL;
 }
 
+static SymbolTable* findSymbolByName(string name)
+{
+	list<SymbolTable*>::iterator it;
+	for (it = SymbolList->begin(); it !=SymbolList->end(); ++it)
+	{
+		if ((*it)->getName() == name)
+			return *it;
+	}
+	return NULL;
+}
+
 static string intAsHex(int x)
 {
 	std::stringstream stream;
 	stream << std::hex << x;
 	std::string result(stream.str());
 	string a;
-	if (result.length() < 8)
+	if (result.length() < 2)
 	{
 		int i = result.length();
-		while (i < 8) {
-			a.append("0");
-			i++;
+		if (i == 0)
+		{
+			result.append("0");
+			result.append("0");
 		}
+		else
+		{
+			string l = "";
+			l.append("0");
+			l += result[0];
+			result = l;
+		}
+	}
+	else {
+		string l = "";
+		l += result[1];
+		l += result[0];
+		result = l;
 	}
 	a.append(result);
 	return a;
+}
+
+static string intRegAsBinary(int a)
+{
+	//int a = 1111165117;
+	string binary("");
+	int mask = 1;
+	for (int i = 0; i < 5; i++)
+	{
+		if ((mask&a) >= 1)
+			binary = "1" + binary;
+		else
+			binary = "0" + binary;
+		mask <<= 1;
+	}
+	string ret = "";
+	
+	ret += binary[0];
+	ret += binary[1];
+	ret += binary[2];
+	ret += binary[3];
+	ret += binary[4];
+	return ret;
+}
+
+static string intAddrModeAsBinary(int a)
+{
+	string binary("");
+	int mask = 1;
+	for (int i = 0; i < 3; i++)
+	{
+		if ((mask&a) >= 1)
+			binary = "1" + binary;
+		else
+			binary = "0" + binary;
+		mask <<= 1;
+	}
+	string ret = "";
+
+	ret += binary[0];
+	ret += binary[1];
+	ret += binary[2];
+	return ret;
+}
+static string intOpCodeAsBinary(int a)
+{
+	string binary("");
+	int mask = 1;
+	for (int i = 0; i < 8; i++)
+	{
+		if ((mask&a) >= 1)
+			binary = "1" + binary;
+		else
+			binary = "0" + binary;
+		mask <<= 1;
+	}
+	string ret = "";
+
+
+	ret += binary[4];
+	ret += binary[5];
+	ret += binary[6];
+	ret += binary[7];
+	ret += binary[0];
+	ret += binary[1];
+	ret += binary[2];
+	ret += binary[3];
+	return ret;
+}
+
+static void setCountersToZero()
+{
+	list<Section*>::iterator it;
+	for (it = SectionList->begin(); it != SectionList->end(); ++it)
+	{
+		(*it)->setLocationCounter(0);
+	}
 }
 
 static bool checkOrgOverlaping(int begin, int size)

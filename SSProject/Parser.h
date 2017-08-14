@@ -34,6 +34,14 @@ public:
 	void writeInFile();
 	void relocate(string);
 	void fillSection(string);
+	void relocateLabel(string);
+	void relocateData(string);
+	void relocateInstruction(string);
+	void relocateGlobal(string);
+	void contentArithmetic(string);
+	void contentStack(string);
+	void contentNoRelocateTwoOperands(string);
+	void contentRelocateTwoOperands(string);
 
 	void parseOrg(string);
 	void parseSection(string);
