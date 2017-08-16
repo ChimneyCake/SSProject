@@ -340,7 +340,7 @@ void Parser::contentRelocateTwoOperands(string line)
 
 	iss >> word;
 	string reg1 = word;
-
+	int disp;//pomeraj u memoriji
 	string addressMode;
 	string operand;
 	string register1;//for reginddisp
@@ -348,7 +348,80 @@ void Parser::contentRelocateTwoOperands(string line)
 	if (isPCRelative(reg1))
 	{
 		//addressMode = "pcrel";
-		cout << "PC RELATIVNO" << endl;
+		addressMode = "reginddisp";//address code is the same for pcrel and reginddisp
+		//cout << "PC RELATIVE" << endl;
+		operand = reg1.substr(1, reg1.length() - 1);
+		if (tmpSection->getOrgFlag() == false)
+		{
+			cout << "KSENIJA";
+		}
+
+		SymbolTable* sym = findSymbolByName(operand);
+		if (sym->getSection()->getOrgFlag() == false)//ako nije org onda mora relokacija
+		{
+			int offset = tmpSection->getLocationCounter() - 4;
+			int id;
+
+			if (sym->getScope() == "local")
+			{
+				id = tmpSection->getId();
+				disp = sym->getOffset();
+			}
+			else
+			{
+				id = sym->getId();
+				disp = 0;
+			}
+			string type = "R";
+
+			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));//binarni kod za opCode
+			string addrMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));//binarni kod aa adresni mod
+			int r0 = RegisterCodes.at(reg0);
+			reg0 = intRegAsBinary(r0);
+			
+
+			string code = "";
+			code.append(opCode);
+			code.append(addrMode);
+			code.append(reg0);
+			code.append("00000");
+			//code.append(reg1);
+			if (isLoadStoreInstruction(instruction) == true)
+			{
+				cout << "LOAD STORE INSTRUKCIJA";//bice promenjeno
+			}
+			else
+			{
+				code.append("00000000000");
+			}
+			string b4 = "0b";
+			b4.append(code.substr(0, 8));
+			b4 = intAsHex(convertStringToInt(b4));
+			string tmp;
+			tmp += b4[1];
+			tmp += b4[0];
+			b4 = tmp;
+
+			string b3 = "0b";
+			b3.append(code.substr(8, 8));
+			b3 = intAsHex(convertStringToInt(b3));
+
+			string b2 = "0b";
+			b2.append(code.substr(16, 8));
+			b2 = intAsHex(convertStringToInt(b2));
+
+			string b1 = "0b";
+			b1.append(code.substr(24, 8));
+			b1 = intAsHex(convertStringToInt(b1));
+
+			string hexCode = "";
+			hexCode.append(b4);
+			hexCode.append(b3);
+			hexCode.append(b2);
+			hexCode.append(b1);
+
+			cout << hexCode << endl;
+		}
 	}
 	else
 	{
@@ -386,7 +459,6 @@ void Parser::contentRelocateTwoOperands(string line)
 			int offset = tmpSection->getLocationCounter() - 4;
 			int id;
 
-			int disp;//pomeraj sto se memorije tice
 			if (sym->getScope() == "local")
 			{
 				id = tmpSection->getId();
@@ -421,7 +493,7 @@ void Parser::contentRelocateTwoOperands(string line)
 			code.append(reg1);
 			if (isLoadStoreInstruction(instruction) == true)
 			{
-				cout << "LOAD STORE BLJUC";
+				cout << "LOAD STORE INSTRUKCIJA";//bice promenjeno
 				
 			}
 			else
@@ -454,7 +526,7 @@ void Parser::contentRelocateTwoOperands(string line)
 			hexCode.append(b2);
 			hexCode.append(b1);
 
-			cout <<"HELP ME"<< hexCode << endl;
+			cout <<hexCode << endl;
 		}
 	}
 }
