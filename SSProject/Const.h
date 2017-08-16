@@ -22,16 +22,22 @@ static vector<string> SystemDefinedWords = { "DUP", "DEF", "ORG" };
 static vector<string> Scope = { "local", "global" };
 static vector<string> NoOperandInstructions = { "RET" };
 static vector<string> OneOperandInstructions = {"INT","JMP", "CALL","PUSH", "POP"};
-static vector<string> TwoOperandsInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ", "LOAD", "STORE" };
+static vector<string> TwoOperandsInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ", "LOAD", "STORE", "LOADUB", "LOADSB", "LOADUW", "LOADSW", "STOREB", "STOREW" };
 static vector<string> ThreeOperandsInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR",  "ASL", "ASR" };
 static vector<string> JumpInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ" };
 static vector<string> ArithmeticInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR", "NOT", "ASL", "ASR" };
+static vector<string> LoadStoreInstructions = { "LOAD", "STORE", "LOADUB", "LOADSB", "LOADUW", "LOADSW", "STOREB", "STOREW" };
 static vector<string> StackInstructions = { "PUSH", "POP" };
 //static map<int, string> HexadecimalNumbers = { {0, "0x00"}, {1, "0x01"}, {2, "0x02"}, {3, "0x03"}, {4, "0x04"}, {5, "0x05"}, {6, "0x06"}, {7, "0x07"}, {8, "0x08"}, {9, "0x09"}, {10, "0x0A"}, {11, "0x0B"}, {12, "0x0C"}, {13, "0x0D"}, {14, "0x0E"}, {15, "0x0F"} };
-static map<string, int> OperationCodes = { {"INT", 0x00}, {"JMP", 0x02}, {"CALL", 0x03}, {"RET", 0x01}, {"JZ", 0x04},{"JNZ", 0x05}, {"JGZ", 0x06}, {"JGEZ", 0x07}, {"JLZ", 0x08}, {"JLEZ", 0x09}, {"LOAD", 0x10}, {"STORE", 0x11},{"PUSH", 0x20},{"POP", 0x21}, {"ADD", 0x30}, {"SUB", 0x31}, {"MUL", 0x32}, {"DIV", 0x33}, {"MOD", 0x34}, {"AND", 0x35}, {"OR", 0x36}, {"XOR", 0x37}, {"NOT", 0x38}, {"ASL", 0x39}, {"ASR", 0x3A} };
+static map<string, int> OperationCodes = { {"INT", 0x00}, {"JMP", 0x02}, {"CALL", 0x03}, {"RET", 0x01}, {"JZ", 0x04},{"JNZ", 0x05}, {"JGZ", 0x06}, {"JGEZ", 0x07}, {"JLZ", 0x08}, {"JLEZ", 0x09}, {"LOAD", 0x10},{ "LOADUB", 0x10 },{ "LOADSB", 0x10 },{ "LOADUW", 0x10 },{ "LOADSW", 0x10 },{"STORE", 0x11},{ "STOREB", 0x11 },{ "STOREW", 0x11 },{"PUSH", 0x20},{"POP", 0x21}, {"ADD", 0x30}, {"SUB", 0x31}, {"MUL", 0x32}, {"DIV", 0x33}, {"MOD", 0x34}, {"AND", 0x35}, {"OR", 0x36}, {"XOR", 0x37}, {"NOT", 0x38}, {"ASL", 0x39}, {"ASR", 0x3A} };
 static map<string, int> RegisterCodes = { {"R0", 0x00}, {"R1", 0x01}, {"R2", 0x02}, {"R3", 0x03}, {"R4", 0x04}, {"R5", 0x05}, {"R6", 0x06}, {"R7", 0x07}, {"R8", 0x08}, {"R9", 0x09}, {"R10", 0x0A}, {"R11", 0x0B}, {"R12", 0x0C}, {"R13", 0x0D}, {"R14", 0x0E}, {"R15", 0x0F} };
 static map<string, int> AddressModeCodes = { {"immed", 0b100}, {"regdir", 0b000}, {"memdir", 0b110}, {"regind", 0b010}, {"reginddisp", 0b111} };
 //static map<string, string> RegCodes = { {"R0", "0x00"}, {"R1", "0x01"}, {"R2", "0x02"}, {"R3", "0x03"}, {"R4", "0x04"}, {"R5", "0x05"}, {"R6", "0x06"}, {"R7", "0x07"}, {"R8", "0x08"}, {"R9", "0x09"}, {"R10", "0x0A"}, {"R11", "0x0B"}, {"R12", "0x0C"}, {"R13", "0x0D"}, {"R14", "0x0E"}, {"R15", "0x0F"}, {"PC", "0x10"}, {"SP", "0x11"} };
+//DW-double word
+//WZ-word expanded with zeros
+//WS-word expanded with sign
+//BZ-byte expanded with zeros
+//BS-byte expanded with sign
 static map<string, int> DataTypeCodes = { {"DW", 0b000}, {"WZ", 0b001}, {"WS", 0b101}, {"BZ", 0b011}, {"BS", 0b111} };
 
 static list<SymbolTable*>* SymbolList = new list<SymbolTable*>();//list that has to be written is symbol table
@@ -113,8 +119,15 @@ static bool isRegdir(string opCode)
 static bool isRegindDisp(string opCode)
 {
 	toUpper(opCode);
-	regex reginddisp("\\[R[[:digit:]][0-5]?\\+[[:digit:]]+\\]");
-	return regex_match(opCode, reginddisp);
+	//regex reginddisp("\\[R[[:digit:]][0-5]?\\+[abc[:digit:]]+\\]");
+	//return regex_match(opCode, reginddisp);
+	if (opCode[0] == '[')
+	{
+		if (opCode[3]=='+'||opCode[4] == '+')
+			if (opCode[opCode.length() - 1] == ']')
+				return true;
+	}
+	return false;
 }
 
 static bool isMemdir(string opCode)
@@ -253,6 +266,15 @@ static bool isArithmeticInstruction(string instruction)
 	return false;
 }
 
+static bool isLoadStoreInstruction(string instruction)
+{
+	toUpper(instruction);
+	for (int i = 0; i < LoadStoreInstructions.size(); i++)
+		if (LoadStoreInstructions.at(i) == instruction)
+			return true;
+	return false;
+}
+
 static bool isJumpInstruction(string instruction)
 {
 	toUpper(instruction);
@@ -341,8 +363,8 @@ static string intAsHex(int x)
 	}
 	else {
 		string l = "";
-		l += result[1];
 		l += result[0];
+		l += result[1];
 		result = l;
 	}
 	a.append(result);

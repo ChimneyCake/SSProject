@@ -144,6 +144,10 @@ void Parser::contentArithmetic(string line)
 	string b4 = "0b";
 	b4.append(code.substr(0, 8));
 	b4 = intAsHex(convertStringToInt(b4));
+	string tmp;
+	tmp += b4[1];
+	tmp += b4[0];
+	b4 = tmp;
 
 	string b3 = "0b";
 	b3.append(code.substr(8, 8));
@@ -162,7 +166,7 @@ void Parser::contentArithmetic(string line)
 	hexCode.append(b3);
 	hexCode.append(b2);
 	hexCode.append(b1);
-	//cout << hexCode<<endl;
+	cout << hexCode<<endl;
 }
 
 void Parser::contentStack(string line)
@@ -191,6 +195,10 @@ void Parser::contentStack(string line)
 	string b4 = "0b";
 	b4.append(code.substr(0, 8));
 	b4 = intAsHex(convertStringToInt(b4));
+	string tmp;
+	tmp += b4[1];
+	tmp += b4[0];
+	b4 = tmp;
 
 	string b3 = "0b";
 	b3.append(code.substr(8, 8));
@@ -204,7 +212,86 @@ void Parser::contentStack(string line)
 	hexCode.append(b3);
 	hexCode.append(b2);
 	hexCode.append(b1);
-	//cout << hexCode << endl;
+	cout << hexCode << endl;
+}
+
+void Parser::contentNoRelocateTwoOperands(string line)
+{
+	istringstream iss(line);
+	string word;
+	iss >> word;
+
+	string instruction = word;
+	string opCode = intOpCodeAsBinary(OperationCodes.at(word));
+
+	iss >> word;
+
+	string reg0 = intRegAsBinary(RegisterCodes.at(word));
+
+	iss >> word;
+	string addressMode;
+	if (isRegdir(word))
+		addressMode = "regdir";
+	if (isRegInd(word))
+		addressMode = "regind";
+	string addrModeCode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+
+	string reg1 = "";
+
+	if (addressMode == "regdir")
+	{
+		reg1 = word;
+	}
+	else
+	{
+		reg1 = word.substr(1, word.length() - 2);
+	}
+
+	reg1 = intRegAsBinary(RegisterCodes.at(reg1));
+
+	string code = "";
+	code.append(opCode);
+	code.append(addrModeCode);
+	code.append(reg0);
+	code.append(reg1);
+
+	if (isLoadStoreInstruction(instruction))
+	{
+		cout << "LS INS" << endl;
+		code.append("00000000000");
+	}
+	else
+	{
+		code.append("00000000000");
+	}
+
+	string b4 = "0b";
+	b4.append(code.substr(0, 8));
+	b4 = intAsHex(convertStringToInt(b4));
+	string tmp;
+	tmp += b4[1];
+	tmp += b4[0];
+	b4 = tmp;
+
+	string b3 = "0b";
+	b3.append(code.substr(8, 8));
+	b3 = intAsHex(convertStringToInt(b3));
+
+	string b2 = "0b";
+	b2.append(code.substr(16, 8));
+	b2 = intAsHex(convertStringToInt(b2));
+
+	string b1 = "0b";
+	b1.append(code.substr(24, 8));
+	b1 = intAsHex(convertStringToInt(b1));
+
+	string hexCode = "";
+	hexCode.append(b4);
+	hexCode.append(b3);
+	hexCode.append(b2);
+	hexCode.append(b1);
+
+	cout << hexCode << endl;
 }
 
 void Parser::relocateInstruction(string line)
@@ -240,48 +327,137 @@ void Parser::relocateInstruction(string line)
 	}
 }
 
-void Parser::contentNoRelocateTwoOperands(string line)
+
+void Parser::contentRelocateTwoOperands(string line)
 {
 	istringstream iss(line);
 	string word;
 	iss >> word;
-
-	string opCode = intOpCodeAsBinary(OperationCodes.at(word));
-
-	iss >> word;
-
-	string reg0 = intRegAsBinary(RegisterCodes.at(word));
+	string instruction = word;//name of the instruction
 
 	iss >> word;
+	string reg0 = word;
+
+	iss >> word;
+	string reg1 = word;
+
 	string addressMode;
-	if (isRegdir(word))
-		addressMode = "regdir";
-	if (isRegInd(word))
-		addressMode = "regind";
-	string addrModeCode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
-
-	string reg1 = "";
-
-	if (addressMode == "regdir")
+	string operand;
+	string register1;//for reginddisp
+     //npr za JZ R1 [R4+a] instruction=JZ reg0=R1 reg1=[R4+a]; addressMode=regind; operand=a;
+	if (isPCRelative(reg1))
 	{
-		reg1 = word;
+		//addressMode = "pcrel";
+		cout << "PC RELATIVNO" << endl;
 	}
 	else
 	{
-		reg1 = word.substr(1, word.length()-2);
+		if (isImmed(reg1))
+		{
+			addressMode = "immed";
+			operand = reg1.substr(1, reg1.length() - 1);
+			cout << operand<<endl;
+		}
+			
+		else if (isRegindDisp(reg1))
+		{
+			addressMode = "reginddisp";
+			int i = 0;
+			while (reg1[++i]!='+')
+			{
+				register1 += reg1[i];
+			}
+			i++;
+			while (reg1[i] != ']')
+			{
+				operand += reg1[i];
+				i++;
+			}
+		}
+		else if (isMemdir(reg1))
+		{
+			addressMode = "memdir";
+			operand = reg1;
+			cout << operand << endl;
+		}
+		SymbolTable* sym = findSymbolByName(operand);
+		if (sym->getSection()->getOrgFlag() == false)//ako nije org onda mora relokacija
+		{
+			int offset = tmpSection->getLocationCounter() - 4;
+			int id;
+
+			int disp;//pomeraj sto se memorije tice
+			if (sym->getScope() == "local")
+			{
+				id = tmpSection->getId();
+				disp = sym->getOffset();
+			}
+			else
+			{
+				id = sym->getId();
+				disp = 0;
+			}
+			string type = "A";
+
+			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));//binarni kod za opCode
+			string addrMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));//binarni kod aa adresni mod
+			int r0 = RegisterCodes.at(reg0);
+			if (addressMode == "reginddisp")
+			{
+				int r1 = RegisterCodes.at(register1);
+				reg0 = intRegAsBinary(r0);
+				reg1 = intRegAsBinary(r1);
+			}
+			else
+			{
+				reg0 = intRegAsBinary(r0);
+				reg1 = "00000";
+			}
+
+			string code = "";
+			code.append(opCode);
+			code.append(addrMode);
+			code.append(reg0);
+			code.append(reg1);
+			if (isLoadStoreInstruction(instruction) == true)
+			{
+				cout << "LOAD STORE BLJUC";
+				
+			}
+			else
+			{
+				code.append("00000000000");
+			}
+			string b4 = "0b";
+			b4.append(code.substr(0, 8));
+			b4 = intAsHex(convertStringToInt(b4));
+			string tmp;
+			tmp += b4[1];
+			tmp += b4[0];
+			b4 = tmp;
+
+			string b3 = "0b";
+			b3.append(code.substr(8, 8));
+			b3 = intAsHex(convertStringToInt(b3));
+
+			string b2 = "0b";
+			b2.append(code.substr(16, 8));
+			b2 = intAsHex(convertStringToInt(b2));
+
+			string b1 = "0b";
+			b1.append(code.substr(24, 8));
+			b1 = intAsHex(convertStringToInt(b1));
+
+			string hexCode = "";
+			hexCode.append(b4);
+			hexCode.append(b3);
+			hexCode.append(b2);
+			hexCode.append(b1);
+
+			cout <<"HELP ME"<< hexCode << endl;
+		}
 	}
-
-	reg1= intRegAsBinary(RegisterCodes.at(reg1));
-
-	string code = "";
-	code.append(opCode);
-	code.append(addrModeCode);
-	code.append(reg0);
-	code.append(reg1);
-
 }
-void Parser::contentRelocateTwoOperands(string line)
-{}
 void Parser::instruction(string line)
 {
 	string instruction = line.substr(0, line.find(" "));
