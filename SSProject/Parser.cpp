@@ -325,8 +325,201 @@ void Parser::relocateInstruction(string line)
 				contentRelocateTwoOperands(x);
 			}
 	}
+	if (isOneOperandInstruction(instruction))
+	{
+		istringstream iss(line);
+		string word;
+
+		iss >> word;//<=>instruction
+		iss >> word;//operand
+
+		string operand = word;
+		if (isRegdir(operand) || isRegInd(operand))
+		{
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
+			contentNoRelocateOneOperand(x);
+		}
+		else if (isImmed(operand) || isRegindDisp(operand) || isPCRelative(operand) || isMemdir(operand))
+		{
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 8);
+			contentRelocateOneOperand(x);
+		}
+	}
+	if(isNoOperandInstruction(instruction))
+	{ }
 }
 
+void Parser::contentNoRelocateOneOperand(string line)
+{
+	istringstream iss(line);
+
+	string word;
+	iss >> word;//instruction
+	string instruction = word;
+	string opCode = intOpCodeAsBinary(OperationCodes.at(word));
+
+	string addressMode;
+	iss >> word;
+	string operand;
+	if (isRegdir(word))
+	{
+		addressMode = "regdir";
+		operand = word;
+	}
+	else
+		if (isRegInd(word))
+		{
+			addressMode = "regind";
+			operand = word.substr(1, word.length() - 2);
+		}
+
+
+	string addrModeCode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+	operand= intRegAsBinary(RegisterCodes.at(operand));
+
+	string code;
+	code.append(opCode);
+	code.append(addrModeCode);
+	code.append(operand);
+	code.append("0000000000000000");
+
+	string b4 = "0b";
+	b4.append(code.substr(0, 8));
+	b4 = intAsHex(convertStringToInt(b4));
+	string tmp;
+	tmp += b4[1];
+	tmp += b4[0];
+	b4 = tmp;
+
+	string b3 = "0b";
+	b3.append(code.substr(8, 8));
+	b3 = intAsHex(convertStringToInt(b3));
+
+	string b2 = "0b";
+	b2.append(code.substr(16, 8));
+	b2 = intAsHex(convertStringToInt(b2));
+
+	string b1 = "0b";
+	b1.append(code.substr(24, 8));
+	b1 = intAsHex(convertStringToInt(b1));
+
+	string hexCode = "";
+	hexCode.append(b4);
+	hexCode.append(b3);
+	hexCode.append(b2);
+	hexCode.append(b1);
+	
+	cout << hexCode;
+}
+
+void Parser::contentRelocateOneOperand(string line)
+{
+	istringstream iss(line);
+	string word;
+	iss >> word;
+	string instruction = word;
+	iss >> word;
+	string second = word;
+	string operand;
+	string addressMode;
+	string reg;//for reginddisp
+	int disp;
+	string type;
+	if (isPCRelative(second))
+	{
+	}
+	else
+	{
+		if (isImmed(second))
+		{
+			operand = second.substr(1, operand.length() - 1);
+			addressMode = "immed";
+		}
+		else if (isRegindDisp(second))
+		{
+			int i = 0;
+			while (second[++i] != '+')
+			{
+				reg += second[i];
+			}
+			i++;
+			while (second[i] != ']')
+			{
+				operand += second[i];
+				i++;
+			}
+			addressMode = "reginddisp";
+		}
+		else if (isMemdir(second))
+		{
+			operand = second;
+			addressMode = "memdir";
+		}
+		SymbolTable* sym = findSymbolByName(operand);
+		if (sym->getSection()->getOrgFlag() == false)
+		{
+			int offset = tmpSection->getLocationCounter();
+			int id;
+
+			if (sym->getScope() == "local")
+			{
+				id = tmpSection->getId();
+				disp = sym->getOffset();
+			}
+			else
+			{
+				id = sym->getId();
+				disp = 0;
+			}
+			type = "A";
+			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));//binarni kod za opCode
+			
+			if (addressMode == "reginddisp")
+			{
+				reg = intRegAsBinary(RegisterCodes.at(reg));
+			}
+			else
+			{
+				reg = "00000";
+			}
+			addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));//binarni kod aa adresni mod
+			string code = "";
+			code.append(opCode);
+			code.append(addressMode);
+			code.append(reg);
+			code.append("0000000000000000");
+
+			string b4 = "0b";
+			b4.append(code.substr(0, 8));
+			b4 = intAsHex(convertStringToInt(b4));
+			string tmp;
+			tmp += b4[1];
+			tmp += b4[0];
+			b4 = tmp;
+
+			string b3 = "0b";
+			b3.append(code.substr(8, 8));
+			b3 = intAsHex(convertStringToInt(b3));
+
+			string b2 = "0b";
+			b2.append(code.substr(16, 8));
+			b2 = intAsHex(convertStringToInt(b2));
+
+			string b1 = "0b";
+			b1.append(code.substr(24, 8));
+			b1 = intAsHex(convertStringToInt(b1));
+
+			string hexCode = "";
+			hexCode.append(b4);
+			hexCode.append(b3);
+			hexCode.append(b2);
+			hexCode.append(b1);
+
+			cout << hexCode << endl;
+
+		}
+	}
+}
 
 void Parser::contentRelocateTwoOperands(string line)
 {
@@ -350,16 +543,28 @@ void Parser::contentRelocateTwoOperands(string line)
 		//addressMode = "pcrel";
 		addressMode = "reginddisp";//address code is the same for pcrel and reginddisp
 		//cout << "PC RELATIVE" << endl;
+		string type;
 		operand = reg1.substr(1, reg1.length() - 1);
 		if (tmpSection->getOrgFlag() == false)
 		{
+			type = "R";
 			cout << "KSENIJA";
+		}
+		else
+		{
+			type = "A";
 		}
 
 		SymbolTable* sym = findSymbolByName(operand);
 		if (sym->getSection()->getOrgFlag() == false)//ako nije org onda mora relokacija
 		{
-			int offset = tmpSection->getLocationCounter() - 4;
+			//int offset = tmpSection->getLocationCounter() - 4;
+			int offset;
+			if (type == "A")
+				offset = tmpSection->getLocationCounter();
+			else
+				offset = tmpSection->getLocationCounter() - 4;
+
 			int id;
 
 			if (sym->getScope() == "local")
@@ -372,7 +577,7 @@ void Parser::contentRelocateTwoOperands(string line)
 				id = sym->getId();
 				disp = 0;
 			}
-			string type = "R";
+			//type = "A";
 
 			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));//binarni kod za opCode
 			string addrMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));//binarni kod aa adresni mod
@@ -456,7 +661,8 @@ void Parser::contentRelocateTwoOperands(string line)
 		SymbolTable* sym = findSymbolByName(operand);
 		if (sym->getSection()->getOrgFlag() == false)//ako nije org onda mora relokacija
 		{
-			int offset = tmpSection->getLocationCounter() - 4;
+			//int offset = tmpSection->getLocationCounter() - 4;
+			int offset = tmpSection->getLocationCounter();
 			int id;
 
 			if (sym->getScope() == "local")
@@ -530,6 +736,7 @@ void Parser::contentRelocateTwoOperands(string line)
 		}
 	}
 }
+
 void Parser::instruction(string line)
 {
 	string instruction = line.substr(0, line.find(" "));

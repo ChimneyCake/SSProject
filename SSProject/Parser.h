@@ -44,6 +44,8 @@ public:
 	void contentStack(string);
 	void contentNoRelocateTwoOperands(string);
 	void contentRelocateTwoOperands(string);
+	void contentNoRelocateOneOperand(string);
+	void contentRelocateOneOperand(string);
 
 	void parseOrg(string);
 	void parseSection(string);
