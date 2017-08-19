@@ -141,31 +141,7 @@ void Parser::contentArithmetic(string line)
 	code.append(reg2);
 	code.append("000000");
 	
-	string b4 = "0b";
-	b4.append(code.substr(0, 8));
-	b4 = intAsHex(convertStringToInt(b4));
-	string tmp;
-	tmp += b4[1];
-	tmp += b4[0];
-	b4 = tmp;
-
-	string b3 = "0b";
-	b3.append(code.substr(8, 8));
-	b3 = intAsHex(convertStringToInt(b3));
-
-	string b2 = "0b";
-	b2.append(code.substr(16, 8));
-	b2 = intAsHex(convertStringToInt(b2));
-
-	string b1 = "0b";
-	b1.append(code.substr(24, 8));
-	b1 = intAsHex(convertStringToInt(b1));
-
-	string hexCode = "";
-	hexCode.append(b4);
-	hexCode.append(b3);
-	hexCode.append(b2);
-	hexCode.append(b1);
+	string hexCode = returnHexCode(code);
 	cout << hexCode<<endl;
 }
 
@@ -192,26 +168,7 @@ void Parser::contentStack(string line)
 	code.append(reg);
 	code.append("0000000000000000");
 
-	string b4 = "0b";
-	b4.append(code.substr(0, 8));
-	b4 = intAsHex(convertStringToInt(b4));
-	string tmp;
-	tmp += b4[1];
-	tmp += b4[0];
-	b4 = tmp;
-
-	string b3 = "0b";
-	b3.append(code.substr(8, 8));
-	b3 = intAsHex(convertStringToInt(b3));
-
-	string b2 = "00";
-	string b1 = "00";
-
-	string hexCode = "";
-	hexCode.append(b4);
-	hexCode.append(b3);
-	hexCode.append(b2);
-	hexCode.append(b1);
+	string hexCode = returnHexCode(code);
 	cout << hexCode << endl;
 }
 
@@ -265,31 +222,7 @@ void Parser::contentNoRelocateTwoOperands(string line)
 		code.append("00000000000");
 	}
 
-	string b4 = "0b";
-	b4.append(code.substr(0, 8));
-	b4 = intAsHex(convertStringToInt(b4));
-	string tmp;
-	tmp += b4[1];
-	tmp += b4[0];
-	b4 = tmp;
-
-	string b3 = "0b";
-	b3.append(code.substr(8, 8));
-	b3 = intAsHex(convertStringToInt(b3));
-
-	string b2 = "0b";
-	b2.append(code.substr(16, 8));
-	b2 = intAsHex(convertStringToInt(b2));
-
-	string b1 = "0b";
-	b1.append(code.substr(24, 8));
-	b1 = intAsHex(convertStringToInt(b1));
-
-	string hexCode = "";
-	hexCode.append(b4);
-	hexCode.append(b3);
-	hexCode.append(b2);
-	hexCode.append(b1);
+	string hexCode = returnHexCode(code);
 
 	cout << hexCode << endl;
 }
@@ -383,32 +316,8 @@ void Parser::contentNoRelocateOneOperand(string line)
 	code.append(operand);
 	code.append("0000000000000000");
 
-	string b4 = "0b";
-	b4.append(code.substr(0, 8));
-	b4 = intAsHex(convertStringToInt(b4));
-	string tmp;
-	tmp += b4[1];
-	tmp += b4[0];
-	b4 = tmp;
+	string hexCode = returnHexCode(code);
 
-	string b3 = "0b";
-	b3.append(code.substr(8, 8));
-	b3 = intAsHex(convertStringToInt(b3));
-
-	string b2 = "0b";
-	b2.append(code.substr(16, 8));
-	b2 = intAsHex(convertStringToInt(b2));
-
-	string b1 = "0b";
-	b1.append(code.substr(24, 8));
-	b1 = intAsHex(convertStringToInt(b1));
-
-	string hexCode = "";
-	hexCode.append(b4);
-	hexCode.append(b3);
-	hexCode.append(b2);
-	hexCode.append(b1);
-	
 	cout << hexCode;
 }
 
@@ -490,31 +399,7 @@ void Parser::contentRelocateOneOperand(string line)
 			code.append(reg);
 			code.append("0000000000000000");
 
-			string b4 = "0b";
-			b4.append(code.substr(0, 8));
-			b4 = intAsHex(convertStringToInt(b4));
-			string tmp;
-			tmp += b4[1];
-			tmp += b4[0];
-			b4 = tmp;
-
-			string b3 = "0b";
-			b3.append(code.substr(8, 8));
-			b3 = intAsHex(convertStringToInt(b3));
-
-			string b2 = "0b";
-			b2.append(code.substr(16, 8));
-			b2 = intAsHex(convertStringToInt(b2));
-
-			string b1 = "0b";
-			b1.append(code.substr(24, 8));
-			b1 = intAsHex(convertStringToInt(b1));
-
-			string hexCode = "";
-			hexCode.append(b4);
-			hexCode.append(b3);
-			hexCode.append(b2);
-			hexCode.append(b1);
+			string hexCode = returnHexCode(code);
 
 			cout << hexCode << endl;
 		}
@@ -580,31 +465,7 @@ void Parser::contentRelocateOneOperand(string line)
 			code.append(reg);
 			code.append("0000000000000000");
 
-			string b4 = "0b";
-			b4.append(code.substr(0, 8));
-			b4 = intAsHex(convertStringToInt(b4));
-			string tmp;
-			tmp += b4[1];
-			tmp += b4[0];
-			b4 = tmp;
-
-			string b3 = "0b";
-			b3.append(code.substr(8, 8));
-			b3 = intAsHex(convertStringToInt(b3));
-
-			string b2 = "0b";
-			b2.append(code.substr(16, 8));
-			b2 = intAsHex(convertStringToInt(b2));
-
-			string b1 = "0b";
-			b1.append(code.substr(24, 8));
-			b1 = intAsHex(convertStringToInt(b1));
-
-			string hexCode = "";
-			hexCode.append(b4);
-			hexCode.append(b3);
-			hexCode.append(b2);
-			hexCode.append(b1);
+			string hexCode = returnHexCode(code);
 
 			cout << hexCode << endl;
 
@@ -692,31 +553,7 @@ void Parser::contentRelocateTwoOperands(string line)
 			{
 				code.append("00000000000");
 			}
-			string b4 = "0b";
-			b4.append(code.substr(0, 8));
-			b4 = intAsHex(convertStringToInt(b4));
-			string tmp;
-			tmp += b4[1];
-			tmp += b4[0];
-			b4 = tmp;
-
-			string b3 = "0b";
-			b3.append(code.substr(8, 8));
-			b3 = intAsHex(convertStringToInt(b3));
-
-			string b2 = "0b";
-			b2.append(code.substr(16, 8));
-			b2 = intAsHex(convertStringToInt(b2));
-
-			string b1 = "0b";
-			b1.append(code.substr(24, 8));
-			b1 = intAsHex(convertStringToInt(b1));
-
-			string hexCode = "";
-			hexCode.append(b4);
-			hexCode.append(b3);
-			hexCode.append(b2);
-			hexCode.append(b1);
+			string hexCode = returnHexCode(code);
 
 			cout << hexCode << endl;
 		}
@@ -1014,6 +851,8 @@ void Parser::data(string line)
 	if (line.substr(0, 2) == "DD")
 		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
 }
+
+
 
 
 
