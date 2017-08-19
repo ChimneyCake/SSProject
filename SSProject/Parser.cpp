@@ -70,12 +70,14 @@ void Parser::relocate(string line)
 	else relocateInstruction(line);
 
 }
+
 void Parser::relocateGlobal(string line)
 {
 	string label = line.substr(8, line.length() - 8);
 	SymbolTable* sym = findSymbolByName(label);
 	sym->setScope("global");
 }
+
 void Parser::relocateLabel(string line)
 {
 	string s = line.substr(0, line.find(":"));
@@ -90,6 +92,7 @@ void Parser::relocateLabel(string line)
 			relocateInstruction(more);
 	}
 }
+
 void Parser::relocateData(string line)
 {
 	if (line.substr(0, 2) == "DB")
@@ -494,68 +497,78 @@ void Parser::contentRelocateTwoOperands(string line)
 
 	if (isPCRelative(reg1))
 	{
-		//addressMode = "pcrel";
-		addressMode = "reginddisp";//address code is the same for pcrel and reginddisp
-		//cout << "PC RELATIVE" << endl;
-		string type;
+		string type = "R";
+		int offset;
+		int id;
+		addressMode = "reginddisp";
 		operand = reg1.substr(1, reg1.length() - 1);
-		if (tmpSection->getOrgFlag() == false)
-		{
-			type = "R";
-			cout << "KSENIJA";
-		}
-		else
-		{
-			type = "A";
-		}
-
+		register1 = "PC";
 		SymbolTable* sym = findSymbolByName(operand);
-		if (sym->getSection()->getOrgFlag() == false)//ako nije org onda mora relokacija
+		if (sym != NULL)
 		{
-			//int offset = tmpSection->getLocationCounter() - 4;
-			int offset;
-			if (type == "A")
-				offset = tmpSection->getLocationCounter();
-			else
+			if (sym->getSection()->getOrgFlag() == true)
+			{
 				offset = tmpSection->getLocationCounter() - 4;
+				if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
+				{
+					id = 0;
+					if (sym->getScope() == "local")
+						disp = 0 - 4;
+					else
+						disp = 0;
+				}
 
-			int id;
-
-			if (sym->getScope() == "local")
-			{
-				id = tmpSection->getId();
-				disp = sym->getOffset();
 			}
 			else
 			{
-				id = sym->getId();
-				disp = 0;
+				if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
+				{
+					if (sym->getScope() == "local")
+					{
+						id = sym->getSection()->getId();
+						disp = 0;
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0 - 4;
+					}
+				}
+				else//PC nije iz ORG, simbol nije iz ORG
+				{
+					if (sym->getScope() == "local")
+					{
+						id = sym->getSection()->getId();
+						disp = sym->getOffset() - 4;
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0 - 4;
+					}
+
+				}
 			}
-			//type = "A";
-
-			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));//binarni kod za opCode
-			string addrMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));//binarni kod aa adresni mod
-			int r0 = RegisterCodes.at(reg0);
-			reg0 = intRegAsBinary(r0);
-			
-
+			addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));
+			reg0 = intRegAsBinary(RegisterCodes.at(reg0));
+			register1 = intRegAsBinary(RegisterCodes.at(register1));
 			string code = "";
 			code.append(opCode);
-			code.append(addrMode);
+			code.append(addressMode);
 			code.append(reg0);
-			code.append("00000");
-			//code.append(reg1);
+			code.append(register1);
+
 			if (isLoadStoreInstruction(instruction) == true)
 			{
 				cout << "LOAD STORE INSTRUKCIJA";//bice promenjeno
+				code.append("00000000000");
 			}
 			else
 			{
 				code.append("00000000000");
 			}
 			string hexCode = returnHexCode(code);
-
-			cout << hexCode << endl;
 		}
 	}
 	else
@@ -636,31 +649,7 @@ void Parser::contentRelocateTwoOperands(string line)
 			{
 				code.append("00000000000");
 			}
-			string b4 = "0b";
-			b4.append(code.substr(0, 8));
-			b4 = intAsHex(convertStringToInt(b4));
-			string tmp;
-			tmp += b4[1];
-			tmp += b4[0];
-			b4 = tmp;
-
-			string b3 = "0b";
-			b3.append(code.substr(8, 8));
-			b3 = intAsHex(convertStringToInt(b3));
-
-			string b2 = "0b";
-			b2.append(code.substr(16, 8));
-			b2 = intAsHex(convertStringToInt(b2));
-
-			string b1 = "0b";
-			b1.append(code.substr(24, 8));
-			b1 = intAsHex(convertStringToInt(b1));
-
-			string hexCode = "";
-			hexCode.append(b4);
-			hexCode.append(b3);
-			hexCode.append(b2);
-			hexCode.append(b1);
+			string hexCode = returnHexCode(code);
 
 			cout <<hexCode << endl;
 		}
