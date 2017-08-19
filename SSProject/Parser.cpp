@@ -422,11 +422,102 @@ void Parser::contentRelocateOneOperand(string line)
 	string second = word;
 	string operand;
 	string addressMode;
-	string reg;//for reginddisp
+	string reg;//for reginddisp and pcrelative
 	int disp;
 	string type;
 	if (isPCRelative(second))
 	{
+		int offset;
+		int id;
+		addressMode = "reginddisp";
+		operand = second.substr(1, second.length() - 1);
+		reg = "PC";
+		type = "R";
+		SymbolTable* sym = findSymbolByName(operand);
+		if (sym != NULL)
+		{
+			if (sym->getSection()->getOrgFlag() == true)
+			{
+				offset = tmpSection->getLocationCounter() - 4;
+				if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
+				{
+					id = 0;
+					if (sym->getScope() == "local")
+						disp = 0 - 4;
+					else
+						disp = 0;
+				}
+				
+			}
+			else
+			{
+				if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
+				{
+					if (sym->getScope() == "local")
+					{
+						id = sym->getSection()->getId();
+						disp = 0;
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0 - 4;
+					}
+				}
+				else//PC nije iz ORG, simbol nije iz ORG
+				{
+					if (sym->getScope() == "local")
+					{
+						id = sym->getSection()->getId();
+						disp = sym->getOffset() - 4;
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0 - 4;
+					}
+
+				}
+			}
+			//imam disp, imam offset, imam id, imam type, imam addressMode, imam instruction, imam reg
+
+			addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+			instruction = intOpCodeAsBinary(OperationCodes.at(instruction));
+			reg = intRegAsBinary(RegisterCodes.at(reg));
+			string code = "";
+			code.append(instruction);
+			code.append(addressMode);
+			code.append(reg);
+			code.append("0000000000000000");
+
+			string b4 = "0b";
+			b4.append(code.substr(0, 8));
+			b4 = intAsHex(convertStringToInt(b4));
+			string tmp;
+			tmp += b4[1];
+			tmp += b4[0];
+			b4 = tmp;
+
+			string b3 = "0b";
+			b3.append(code.substr(8, 8));
+			b3 = intAsHex(convertStringToInt(b3));
+
+			string b2 = "0b";
+			b2.append(code.substr(16, 8));
+			b2 = intAsHex(convertStringToInt(b2));
+
+			string b1 = "0b";
+			b1.append(code.substr(24, 8));
+			b1 = intAsHex(convertStringToInt(b1));
+
+			string hexCode = "";
+			hexCode.append(b4);
+			hexCode.append(b3);
+			hexCode.append(b2);
+			hexCode.append(b1);
+
+			cout << hexCode << endl;
+		}
 	}
 	else
 	{
@@ -458,7 +549,7 @@ void Parser::contentRelocateOneOperand(string line)
 		SymbolTable* sym = findSymbolByName(operand);
 		if (sym->getSection()->getOrgFlag() == false)
 		{
-			int offset = tmpSection->getLocationCounter();
+			int offset = tmpSection->getLocationCounter()-8;
 			int id;
 
 			if (sym->getScope() == "local")
@@ -538,6 +629,8 @@ void Parser::contentRelocateTwoOperands(string line)
 	string operand;
 	string register1;//for reginddisp
      //npr za JZ R1 [R4+a] instruction=JZ reg0=R1 reg1=[R4+a]; addressMode=regind; operand=a;
+
+
 	if (isPCRelative(reg1))
 	{
 		//addressMode = "pcrel";
@@ -662,7 +755,7 @@ void Parser::contentRelocateTwoOperands(string line)
 		if (sym->getSection()->getOrgFlag() == false)//ako nije org onda mora relokacija
 		{
 			//int offset = tmpSection->getLocationCounter() - 4;
-			int offset = tmpSection->getLocationCounter();
+			int offset = tmpSection->getLocationCounter()-8;
 			int id;
 
 			if (sym->getScope() == "local")

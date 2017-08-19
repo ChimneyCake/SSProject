@@ -53,3 +53,4 @@ void RelocationTable::setId(unsigned int id)
 {
 	this->id = id;
 }
+
