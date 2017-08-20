@@ -1,5 +1,10 @@
 #include "Content.h"
 
+Content::Content(string name)
+{
+	this->hexCode = name;
+}
+
 Section* Content::getSection()
 {
 	return this->section;

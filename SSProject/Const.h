@@ -38,7 +38,7 @@ static map<string, int> AddressModeCodes = { {"immed", 0b100}, {"regdir", 0b000}
 //WS-word expanded with sign
 //BZ-byte expanded with zeros
 //BS-byte expanded with sign
-static map<string, int> DataTypeCodes = { {"DW", 0b000}, {"WZ", 0b001}, {"WS", 0b101}, {"BZ", 0b011}, {"BS", 0b111} };
+//static map<string, int> DataTypeCodes = { {"DW", 0b000}, {"WZ", 0b001}, {"WS", 0b101}, {"BZ", 0b011}, {"BS", 0b111} };
 
 static list<SymbolTable*>* SymbolList = new list<SymbolTable*>();//list that has to be written is symbol table
 
@@ -371,6 +371,22 @@ static string intAsHex(int x)
 	return a;
 }
 
+static string intDispAsHex(int x)
+{
+	std::stringstream stream;
+	stream << std::hex << x;
+	std::string result(stream.str());
+	string a;
+	int b = 8 - result.length();
+	while (b > 0)
+	{
+		a += '0';
+		b--;
+	}
+	a.append(result);
+	return a;
+}
+
 static string intRegAsBinary(int a)
 {
 	//int a = 1111165117;
@@ -482,6 +498,19 @@ static string returnHexCode(string code)
 	hexCode.append(b1);
 
 	return hexCode;
+}
+
+static bool isExpression(string text)
+{
+	if (std::string::npos != text.find_first_of("+-*/")) {
+		return true;
+	}
+	return false;
+}
+
+static bool isConst(string text)
+{
+	return text.find_first_not_of("0123456789") == std::string::npos;
 }
 #endif // !Const_
 

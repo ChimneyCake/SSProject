@@ -4,6 +4,7 @@
 #include <string>
 #include "RelocationTable.h"
 #include "Content.h"
+#include <list>
 
 using namespace std;
 
@@ -22,6 +23,7 @@ private:
 	unsigned int id = statid++;
 	string scope;//local or global
 	bool isSection;
+
 public:
 
 	SymbolTable(string);
@@ -53,8 +55,7 @@ private:
 	bool orgFlag;
 	string type;
 	unsigned int locationCounter;
-	//RelocationTable* relocTable;
-	//Content* content;
+
 public:
 	Section(string);
 	~Section(){}
@@ -65,11 +66,8 @@ public:
 	unsigned int getLocationCounter();
 	void setLocationCounter(unsigned int);
 
-	/*RelocationTable* getRelocTable();
-	void setRelocTable(RelocationTable*);
-
-	Content* getContent();
-	void setContent(Content*);*/
+	list<RelocationTable*>* relocationTableList;
+	list<Content*>* contentList;
 };
 
 class Symbol :public SymbolTable {

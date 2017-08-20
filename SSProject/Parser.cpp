@@ -75,7 +75,18 @@ void Parser::relocateGlobal(string line)
 {
 	string label = line.substr(8, line.length() - 8);
 	SymbolTable* sym = findSymbolByName(label);
-	sym->setScope("global");
+	if (sym != NULL)
+		sym->setScope("global");
+	else
+	{
+		SymbolTable* sym=new Symbol(label);
+		((Symbol*)sym)->setIdSection(0);
+		sym->setIsSection(false);
+		sym->setOffset(0);
+		((Symbol*)sym)->setType("SYM");
+		SymbolList->push_back(sym);
+		Symbols->push_back((Symbol*)sym);
+	}
 }
 
 void Parser::relocateLabel(string line)
@@ -146,6 +157,10 @@ void Parser::contentArithmetic(string line)
 	
 	string hexCode = returnHexCode(code);
 	cout << hexCode<<endl;
+
+	Content* con = new Content(hexCode);
+	con->setSection(tmpSection);
+	tmpSection->contentList->push_back(con);
 }
 
 void Parser::contentStack(string line)
@@ -173,6 +188,10 @@ void Parser::contentStack(string line)
 
 	string hexCode = returnHexCode(code);
 	cout << hexCode << endl;
+
+	Content* con = new Content(hexCode);
+	con->setSection(tmpSection);
+	tmpSection->contentList->push_back(con);
 }
 
 void Parser::contentNoRelocateTwoOperands(string line)
@@ -217,8 +236,20 @@ void Parser::contentNoRelocateTwoOperands(string line)
 
 	if (isLoadStoreInstruction(instruction))
 	{
-		cout << "LS INS" << endl;
-		code.append("00000000000");
+		code.append("00000");
+		if (instruction == "LOADUB")
+			code.append("000");
+		if (instruction == "LOADSB")
+			code.append("001");
+		if (instruction == "LOADUW")
+			code.append("011");
+		if (instruction == "STOREB")
+			code.append("100");
+		if (instruction == "STOREW")
+			code.append("101");
+		if (instruction == "LOAD" || instruction == "STORE")
+			code.append("110");		
+		code.append("000");
 	}
 	else
 	{
@@ -228,6 +259,10 @@ void Parser::contentNoRelocateTwoOperands(string line)
 	string hexCode = returnHexCode(code);
 
 	cout << hexCode << endl;
+
+	Content* con = new Content(hexCode);
+	con->setSection(tmpSection);
+	tmpSection->contentList->push_back(con);
 }
 
 void Parser::relocateInstruction(string line)
@@ -322,6 +357,9 @@ void Parser::contentNoRelocateOneOperand(string line)
 	string hexCode = returnHexCode(code);
 
 	cout << hexCode;
+	Content* con = new Content(hexCode);
+	con->setSection(tmpSection);
+	tmpSection->contentList->push_back(con);
 }
 
 void Parser::contentRelocateOneOperand(string line)
@@ -337,78 +375,154 @@ void Parser::contentRelocateOneOperand(string line)
 	string reg;//for reginddisp and pcrelative
 	int disp;
 	string type;
+	int offset;
+	int id;
 	if (isPCRelative(second))
 	{
-		int offset;
-		int id;
 		addressMode = "reginddisp";
 		operand = second.substr(1, second.length() - 1);
 		reg = "PC";
 		type = "R";
-		SymbolTable* sym = findSymbolByName(operand);
-		if (sym != NULL)
+		if (!isExpression(operand) && !isConst(operand))//ono sto vec imam-.txt fajl xD
 		{
-			if (sym->getSection()->getOrgFlag() == true)
+			SymbolTable* sym = findSymbolByName(operand);
+			if (sym != NULL)
 			{
-				offset = tmpSection->getLocationCounter() - 4;
-				if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
+				if (sym->getSection()->getOrgFlag() == true)
 				{
-					id = 0;
-					if (sym->getScope() == "local")
-						disp = 0 - 4;
-					else
-						disp = 0;
+					offset = tmpSection->getLocationCounter() - 4;
+					if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
+					{
+						id = 0;
+						if (sym->getScope() == "local")
+							disp = 0 - 4;
+						else
+							disp = 0;
+					}
+
 				}
-				
+				else
+				{
+					if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
+					{
+						if (sym->getScope() == "local")
+						{
+							id = sym->getSection()->getId();
+							disp = 0;
+						}
+						else
+						{
+							id = sym->getId();
+							disp = 0 - 4;
+						}
+					}
+					else//PC nije iz ORG, simbol nije iz ORG
+					{
+						if (sym->getScope() == "local")
+						{
+							id = sym->getSection()->getId();
+							disp = sym->getOffset() - 4;
+						}
+						else
+						{
+							id = sym->getId();
+							disp = 0 - 4;
+						}
+
+					}
+				}
 			}
-			else
-			{
-				if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
-				{
-					if (sym->getScope() == "local")
-					{
-						id = sym->getSection()->getId();
-						disp = 0;
-					}
-					else
-					{
-						id = sym->getId();
-						disp = 0 - 4;
-					}
-				}
-				else//PC nije iz ORG, simbol nije iz ORG
-				{
-					if (sym->getScope() == "local")
-					{
-						id = sym->getSection()->getId();
-						disp = sym->getOffset() - 4;
-					}
-					else
-					{
-						id = sym->getId();
-						disp = 0 - 4;
-					}
-
-				}
-			}
-			//imam disp, imam offset, imam id, imam type, imam addressMode, imam instruction, imam reg
-
-			addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
-			instruction = intOpCodeAsBinary(OperationCodes.at(instruction));
-			reg = intRegAsBinary(RegisterCodes.at(reg));
-			string code = "";
-			code.append(instruction);
-			code.append(addressMode);
-			code.append(reg);
-			code.append("0000000000000000");
-
-			string hexCode = returnHexCode(code);
-
-			cout << hexCode << endl;
 		}
+		else//else grana da se pozove funkcija za racunanje izraza
+		{
+			if (isConst(operand) && !isExpression(operand))
+			{
+				int res = calculateExpression(operand);
+				offset = tmpSection->getLocationCounter() - 4;
+				id = 0;
+				disp =res-4;
+			}
+			else if (!isConst(operand) && isExpression(operand))
+			{
+				char sign;
+				string op;
+				int i = 0;
+				while (!(operand[i] == '+' || operand[i] == '-' || operand[i] == '*' || operand[i] == '/'))
+				{
+					op += operand[i];
+					i++;
+				}
+				sign = operand[i];
+				string exp = operand.substr(op.length(), operand.length() - op.length());
+				int res = calculateExpression(exp);
+
+				SymbolTable* sym = findSymbolByName(op);
+				if (sym != NULL)
+				{
+					if (sym->getSection()->getOrgFlag() == true)
+					{
+						offset = tmpSection->getLocationCounter() - 4;
+						if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
+						{
+							id = 0;
+							if (sym->getScope() == "local")
+								disp = 0 - 4+res;
+							else
+								disp = 0+res;
+						}
+
+					}
+					else
+					{
+						if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
+						{
+							if (sym->getScope() == "local")
+							{
+								id = sym->getSection()->getId();
+								disp = 0+res;
+							}
+							else
+							{
+								id = sym->getId();
+								disp = 0 - 4+res;
+							}
+						}
+						else//PC nije iz ORG, simbol nije iz ORG
+						{
+							if (sym->getScope() == "local")
+							{
+								id = sym->getSection()->getId();
+								disp = sym->getOffset() - 4 +res;
+							}
+							else
+							{
+								id = sym->getId();
+								disp = 0 - 4+res;
+							}
+
+						}
+					}
+				}
+			}
+
+		}
+		addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+		instruction = intOpCodeAsBinary(OperationCodes.at(instruction));
+		reg = intRegAsBinary(RegisterCodes.at(reg));
+		string code = "";
+		code.append(instruction);
+		code.append(addressMode);
+		code.append(reg);
+		code.append("0000000000000000");
+		string memorydisplacement = intDispAsHex(disp);
+		string hexCode = returnHexCode(code);
+		cout << memorydisplacement;
+		cout << hexCode << endl;
 	}
-	else
+	else//else grana kada nije pcrelativno
 	{
+		type = "A";
+
 		if (isImmed(second))
 		{
 			operand = second.substr(1, operand.length() - 1);
@@ -434,45 +548,93 @@ void Parser::contentRelocateOneOperand(string line)
 			operand = second;
 			addressMode = "memdir";
 		}
-		SymbolTable* sym = findSymbolByName(operand);
-		if (sym->getSection()->getOrgFlag() == false)
+		if (!isExpression(operand) && !isConst(operand))
 		{
-			int offset = tmpSection->getLocationCounter()-8;
-			int id;
-
-			if (sym->getScope() == "local")
+			SymbolTable* sym = findSymbolByName(operand);
+			if (sym != NULL)
 			{
-				id = tmpSection->getId();
-				disp = sym->getOffset();
+				if (sym->getSection()->getOrgFlag() == false)
+				{
+					offset = tmpSection->getLocationCounter() - 8;
+					if (sym->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = sym->getOffset();
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0;
+					}
+					if (addressMode == "reginddisp")
+					{
+						reg = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg = "00000";
+					}
+				}
 			}
-			else
-			{
-				id = sym->getId();
-				disp = 0;
-			}
-			type = "A";
-			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));//binarni kod za opCode
-			
-			if (addressMode == "reginddisp")
-			{
-				reg = intRegAsBinary(RegisterCodes.at(reg));
-			}
-			else
-			{
-				reg = "00000";
-			}
-			addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));//binarni kod aa adresni mod
-			string code = "";
-			code.append(opCode);
-			code.append(addressMode);
-			code.append(reg);
-			code.append("0000000000000000");
-
-			string hexCode = returnHexCode(code);
-
-			cout << hexCode << endl;
-
 		}
+		else if (isConst(operand) && !isExpression(operand))
+		{
+			int res = calculateExpression(operand);
+			offset = tmpSection->getLocationCounter() - 8;
+			id = 0;
+			disp = res;
+		}
+		else if (!isConst(operand) && isExpression(operand))
+		{
+			char sign;
+			string op;
+			int i = 0;
+			while (!(operand[i] == '+' || operand[i] == '-' || operand[i] == '*' || operand[i] == '/'))
+			{
+				op += operand[i];
+				i++;
+			}
+			sign = operand[i];
+			string exp = operand.substr(op.length(), operand.length() - op.length());
+			int res = calculateExpression(exp);
+
+			SymbolTable* sym = findSymbolByName(op);
+			if (sym != NULL)
+			{
+				if (sym->getSection()->getOrgFlag() == false)
+				{
+					offset = tmpSection->getLocationCounter() - 8;
+					if (sym->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = sym->getOffset()+res;
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0+res;
+					}
+					if (addressMode == "reginddisp")
+					{
+						reg = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg = "00000";
+					}
+				}
+			}
+		}
+		addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+		instruction = intOpCodeAsBinary(OperationCodes.at(instruction));
+		reg = intRegAsBinary(RegisterCodes.at(reg));
+		string code = "";
+		code.append(instruction);
+		code.append(addressMode);
+		code.append(reg);
+		code.append("0000000000000000");
+		string memorydisplacement = intDispAsHex(disp);
+		string hexCode = returnHexCode(code);
 	}
 }
 
@@ -481,178 +643,328 @@ void Parser::contentRelocateTwoOperands(string line)
 	istringstream iss(line);
 	string word;
 	iss >> word;
-	string instruction = word;//name of the instruction
+	string instruction = word;
 
 	iss >> word;
-	string reg0 = word;
+	string second = word;//reg0
 
 	iss >> word;
-	string reg1 = word;
-	int disp;//pomeraj u memoriji
+	string third = word;//reg1
+
+	int disp;
+	int offset;
+	int id;
 	string addressMode;
 	string operand;
-	string register1;//for reginddisp
-     //npr za JZ R1 [R4+a] instruction=JZ reg0=R1 reg1=[R4+a]; addressMode=regind; operand=a;
+	string reg;//for reginddisp and pcrel
+	string type;
 
-
-	if (isPCRelative(reg1))
+	if (isPCRelative(third))
 	{
-		string type = "R";
-		int offset;
-		int id;
-		addressMode = "reginddisp";
-		operand = reg1.substr(1, reg1.length() - 1);
-		register1 = "PC";
-		SymbolTable* sym = findSymbolByName(operand);
-		if (sym != NULL)
+		type = "R";
+		operand = third.substr(1, third.length() - 1);
+		reg = "PC";
+		if (!isExpression(operand) && !isConst(operand))
 		{
-			if (sym->getSection()->getOrgFlag() == true)
+			SymbolTable* sym = findSymbolByName(operand);
+			if (sym != NULL)
 			{
-				offset = tmpSection->getLocationCounter() - 4;
-				if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
+				if (sym->getSection()->getOrgFlag() == true)
 				{
-					id = 0;
-					if (sym->getScope() == "local")
-						disp = 0 - 4;
-					else
-						disp = 0;
-				}
-
-			}
-			else
-			{
-				if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
-				{
-					if (sym->getScope() == "local")
+					offset = tmpSection->getLocationCounter() - 4;
+					if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
 					{
-						id = sym->getSection()->getId();
-						disp = 0;
-					}
-					else
-					{
-						id = sym->getId();
-						disp = 0 - 4;
-					}
-				}
-				else//PC nije iz ORG, simbol nije iz ORG
-				{
-					if (sym->getScope() == "local")
-					{
-						id = sym->getSection()->getId();
-						disp = sym->getOffset() - 4;
-					}
-					else
-					{
-						id = sym->getId();
-						disp = 0 - 4;
+						id = 0;
+						if (sym->getScope() == "local")
+							disp = 0 - 4;
+						else
+							disp = 0;
 					}
 
 				}
-			}
-			addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
-			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));
-			reg0 = intRegAsBinary(RegisterCodes.at(reg0));
-			register1 = intRegAsBinary(RegisterCodes.at(register1));
-			string code = "";
-			code.append(opCode);
-			code.append(addressMode);
-			code.append(reg0);
-			code.append(register1);
+				else
+				{
+					if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
+					{
+						if (sym->getScope() == "local")
+						{
+							id = sym->getSection()->getId();
+							disp = 0;
+						}
+						else
+						{
+							id = sym->getId();
+							disp = 0 - 4;
+						}
+					}
+					else//PC nije iz ORG, simbol nije iz ORG
+					{
+						if (sym->getScope() == "local")
+						{
+							id = sym->getSection()->getId();
+							disp = sym->getOffset() - 4;
+						}
+						else
+						{
+							id = sym->getId();
+							disp = 0 - 4;
+						}
 
-			if (isLoadStoreInstruction(instruction) == true)
-			{
-				cout << "LOAD STORE INSTRUKCIJA";//bice promenjeno
-				code.append("00000000000");
+					}
+				}
 			}
-			else
-			{
-				code.append("00000000000");
-			}
-			string hexCode = returnHexCode(code);
 		}
+		else if (isConst(operand) && !isExpression(operand))
+		{
+			int res = calculateExpression(operand);
+			offset = tmpSection->getLocationCounter() - 4;
+			id = 0;
+			disp = res - 4;
+		}
+		else if (!isConst(operand) && isExpression(operand))
+		{
+			char sign;
+			string op;
+			int i = 0;
+			while (!(operand[i] == '+' || operand[i] == '-' || operand[i] == '*' || operand[i] == '/'))
+			{
+				op += operand[i];
+				i++;
+			}
+			sign = operand[i];
+			string exp = operand.substr(op.length(), operand.length() - op.length());
+			int res = calculateExpression(exp);
+
+			SymbolTable* sym = findSymbolByName(op);
+			if (sym != NULL)
+			{
+
+				if (sym->getSection()->getOrgFlag() == true)
+				{
+					offset = tmpSection->getLocationCounter() - 4;
+					if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
+					{
+						id = 0;
+						if (sym->getScope() == "local")
+							disp = 0 - 4+res;
+						else
+							disp = 0+res;
+					}
+
+				}
+				else
+				{
+					if (tmpSection->getOrgFlag() == true)//PC jeste iz ORG, simbol nije iz ORG
+					{
+						if (sym->getScope() == "local")
+						{
+							id = sym->getSection()->getId();
+							disp = 0+res;
+						}
+						else
+						{
+							id = sym->getId();
+							disp = 0 - 4+res;
+						}
+					}
+					else//PC nije iz ORG, simbol nije iz ORG
+					{
+						if (sym->getScope() == "local")
+						{
+							id = sym->getSection()->getId();
+							disp = sym->getOffset() - 4+res;
+						}
+						else
+						{
+							id = sym->getId();
+							disp = 0 - 4+res;
+						}
+
+					}
+				}
+			}
+		}
+
+		addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+		string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));
+		string reg0= intRegAsBinary(RegisterCodes.at(second));
+		string reg1= intRegAsBinary(RegisterCodes.at(reg));
+		string code = "";
+		code.append(opCode);
+		code.append(addressMode);
+		code.append(reg0);
+		code.append(reg);
+		if (isLoadStoreInstruction(instruction) == true)
+		{
+			code.append("00000");
+			if (instruction == "LOADUB")
+				code.append("000");
+			if (instruction == "LOADSB")
+				code.append("001");
+			if (instruction == "LOADUW")
+				code.append("011");
+			if (instruction == "STOREB")
+				code.append("100");
+			if (instruction == "STOREW")
+				code.append("101");
+			if (instruction == "LOAD" || instruction == "STORE")
+				code.append("110");
+			code.append("000");
+		}
+		else
+		{
+			code.append("00000000000");
+		}
+		string memorydisplacement = intDispAsHex(disp);
+		string hexCode = returnHexCode(code);
 	}
-	else
+	else//else grana za !=pcrel
 	{
-		if (isImmed(reg1))
+		type = "A";
+		string reg0;
+		string reg1;
+		if (isImmed(third))
 		{
 			addressMode = "immed";
-			operand = reg1.substr(1, reg1.length() - 1);
-			cout << operand<<endl;
+			operand = third.substr(1, third.length() - 1);
+			cout << operand << endl;
 		}
-			
-		else if (isRegindDisp(reg1))
+
+		else if (isRegindDisp(third))
 		{
 			addressMode = "reginddisp";
 			int i = 0;
-			while (reg1[++i]!='+')
+			while (third[++i] != '+')
 			{
-				register1 += reg1[i];
+				reg += third[i];
 			}
 			i++;
-			while (reg1[i] != ']')
+			while (third[i] != ']')
 			{
-				operand += reg1[i];
+				operand += third[i];
 				i++;
 			}
 		}
-		else if (isMemdir(reg1))
+		else if (isMemdir(third))
 		{
 			addressMode = "memdir";
-			operand = reg1;
+			operand = third;
 			cout << operand << endl;
 		}
-		SymbolTable* sym = findSymbolByName(operand);
-		if (sym->getSection()->getOrgFlag() == false)//ako nije org onda mora relokacija
+
+		if (!isExpression(operand) && !isConst(operand))
 		{
-			//int offset = tmpSection->getLocationCounter() - 4;
-			int offset = tmpSection->getLocationCounter()-8;
-			int id;
-
-			if (sym->getScope() == "local")
+			SymbolTable* sym = findSymbolByName(operand);
+			if (sym != NULL)
 			{
-				id = tmpSection->getId();
-				disp = sym->getOffset();
+				if (sym->getSection()->getOrgFlag() == false)
+				{
+					offset = tmpSection->getLocationCounter() - 8;
+					if (sym->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = sym->getOffset();
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0;
+					}
+					if (addressMode == "reginddisp")
+					{
+						reg1 = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg1 = "00000";
+					}
+					reg0 = intRegAsBinary(RegisterCodes.at(second));
+				}
 			}
-			else
-			{
-				id = sym->getId();
-				disp = 0;
-			}
-			string type = "A";
-
-			string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));//binarni kod za opCode
-			string addrMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));//binarni kod aa adresni mod
-			int r0 = RegisterCodes.at(reg0);
-			if (addressMode == "reginddisp")
-			{
-				int r1 = RegisterCodes.at(register1);
-				reg0 = intRegAsBinary(r0);
-				reg1 = intRegAsBinary(r1);
-			}
-			else
-			{
-				reg0 = intRegAsBinary(r0);
-				reg1 = "00000";
-			}
-
-			string code = "";
-			code.append(opCode);
-			code.append(addrMode);
-			code.append(reg0);
-			code.append(reg1);
-			if (isLoadStoreInstruction(instruction) == true)
-			{
-				cout << "LOAD STORE INSTRUKCIJA";//bice promenjeno
-				
-			}
-			else
-			{
-				code.append("00000000000");
-			}
-			string hexCode = returnHexCode(code);
-
-			cout <<hexCode << endl;
 		}
+		else if (isConst(operand) && !isExpression(operand))
+		{
+			int res = calculateExpression(operand);
+			offset = tmpSection->getLocationCounter() - 8;
+			id = 0;
+			disp = res;
+			reg1 = "00000";
+		}
+		else if (!isConst(operand) && isExpression(operand))
+		{
+			char sign;
+			string op;
+			int i = 0;
+			while (!(operand[i] == '+' || operand[i] == '-' || operand[i] == '*' || operand[i] == '/'))
+			{
+				op += operand[i];
+				i++;
+			}
+			sign = operand[i];
+			string exp = operand.substr(op.length(), operand.length() - op.length());
+			int res = calculateExpression(exp);
+
+			SymbolTable* sym = findSymbolByName(op);
+
+			if (sym != NULL)
+			{
+				if (sym->getSection()->getOrgFlag() == false)
+				{
+					offset = tmpSection->getLocationCounter() - 8;
+					if (sym->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = sym->getOffset()+res;
+					}
+					else
+					{
+						id = sym->getId();
+						disp = 0+res;
+					}
+					if (addressMode == "reginddisp")
+					{
+						reg1 = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg1 = "00000";
+					}
+					
+				}
+			}
+		}
+		reg0 = intRegAsBinary(RegisterCodes.at(second));
+		string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));
+		addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
+		string code = "";
+		code.append(opCode);
+		code.append(addressMode);
+		code.append(reg0);
+		code.append(reg1);
+		if (isLoadStoreInstruction(instruction) == true)
+		{
+			code.append("00000");
+			if (instruction == "LOADUB")
+				code.append("000");
+			if (instruction == "LOADSB")
+				code.append("001");
+			if (instruction == "LOADUW")
+				code.append("011");
+			if (instruction == "STOREB")
+				code.append("100");
+			if (instruction == "STOREW")
+				code.append("101");
+			if (instruction == "LOAD" || instruction == "STORE")
+				code.append("110");
+			code.append("000");
+		}
+		else
+		{
+			code.append("00000000000");
+		}
+
+		string memorydisplacement = intDispAsHex(disp);
+		string hexCode = returnHexCode(code);
 	}
 }
 
@@ -841,7 +1153,94 @@ void Parser::data(string line)
 		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
 }
 
+char* Parser::expressionToParse = new char[2];
 
+int Parser::calculateExpression(string operand)
+{
+	/*char* ar = new char[2];
+	char* val = ar;
+	int i = 0;
+	while (i < operand.length())
+	{
+		*ar++= operand[i];
+		i++;
+	}
+	char x = *val;
+	cout << x<<endl;
+	ar = "";*/
+	char* val = expressionToParse;
+	int i = 0;
+	while (i < operand.length())
+	{
+		*expressionToParse++ = operand[i];
+		i++;
+	}
+	expressionToParse = val;
+	int res = expression();
+	return res;
+}
+
+char Parser::peek()
+{
+	return *expressionToParse;
+}
+
+char Parser::get()
+{
+	return *expressionToParse++;
+}
+
+int Parser::number()
+{
+	int result = get() - '0';
+	while (peek() >= '0' && peek() <= '9')
+	{
+		result = 10 * result + get() - '0';
+	}
+	return result;
+}
+
+int Parser::factor()
+{
+	if (peek() >= '0' && peek() <= '9')
+		return number();
+	else if (peek() == '(')
+	{
+		get(); // '('
+		int result = expression();
+		get(); // ')'
+		return result;
+	}
+	else if (peek() == '-')
+	{
+		get();
+		return -factor();
+	}
+	return 0; // error
+
+}
+
+int Parser::term()
+{
+	int result = factor();
+	while (peek() == '*' || peek() == '/')
+		if (get() == '*')
+			result *= factor();
+		else
+			result /= factor();
+	return result;
+}
+
+int Parser::expression()
+{
+	int result = term();
+	while (peek() == '+' || peek() == '-')
+		if (get() == '+')
+			result += term();
+		else
+			result -= term();
+	return result;
+}
 
 
 

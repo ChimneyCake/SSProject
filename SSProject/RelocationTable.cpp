@@ -1,8 +1,10 @@
 #include "RelocationTable.h"
 
-RelocationTable::RelocationTable()
+RelocationTable::RelocationTable(int offset, string type, unsigned int id)
 {
-
+	this->offset = offset;
+	this->type = type;
+	this->id = id;
 }
 
 Section* RelocationTable::getSection()
@@ -32,16 +34,6 @@ string RelocationTable::getType()
 void RelocationTable::setType(string type)
 {
 	this->type = type;
-}
-
-unsigned int RelocationTable::getAddress()
-{
-	return address;
-}
-
-void RelocationTable::setAddress(unsigned int addres)
-{
-	this->address = address;
 }
 
 unsigned int RelocationTable::getId()

@@ -1,6 +1,7 @@
 #ifndef Content_
 #define Content_
 #include "SymbolTable.h"
+#include <string>
 
 using namespace std;
 
@@ -11,7 +12,7 @@ private:
 	Section* section;
 	string hexCode;
 public:
-	Content() {};
+	Content(string) ;
 	~Content() {};
 
 	Section* getSection();

@@ -13,11 +13,10 @@ class RelocationTable {
 private:
 	int offset;
 	string type;//absolut or relative
-	unsigned int address;//hexadecimal number, represents address that has to be altered
 	unsigned int id;//symbol id or section id when it goes about local symbool
 	Section* section;
 public:
-	RelocationTable();
+	RelocationTable(int, string, unsigned int);
 	~RelocationTable() {};
 
 	Section* getSection();

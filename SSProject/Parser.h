@@ -47,6 +47,18 @@ public:
 	void contentNoRelocateOneOperand(string);
 	void contentRelocateOneOperand(string);
 
+	int calculateExpression(string);
+
+	static char* expressionToParse;
+	static char peek();
+	static char get();
+	static int expression();
+	static int number();
+	static int factor();
+	static int term();
+
+
+
 	void parseOrg(string);
 	void parseSection(string);
 	void parseLabel(string);
