@@ -661,6 +661,7 @@ void Parser::contentRelocateTwoOperands(string line)
 
 	if (isPCRelative(third))
 	{
+		addressMode = "reginddisp";
 		type = "R";
 		operand = third.substr(1, third.length() - 1);
 		reg = "PC";
@@ -793,7 +794,7 @@ void Parser::contentRelocateTwoOperands(string line)
 		code.append(opCode);
 		code.append(addressMode);
 		code.append(reg0);
-		code.append(reg);
+		code.append(reg1);
 		if (isLoadStoreInstruction(instruction) == true)
 		{
 			code.append("00000");
@@ -817,6 +818,8 @@ void Parser::contentRelocateTwoOperands(string line)
 		}
 		string memorydisplacement = intDispAsHex(disp);
 		string hexCode = returnHexCode(code);
+		cout << memorydisplacement;
+		cout << hexCode << endl;
 	}
 	else//else grana za !=pcrel
 	{
@@ -965,6 +968,8 @@ void Parser::contentRelocateTwoOperands(string line)
 
 		string memorydisplacement = intDispAsHex(disp);
 		string hexCode = returnHexCode(code);
+		cout << memorydisplacement;
+		cout << hexCode << endl;
 	}
 }
 
