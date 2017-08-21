@@ -29,6 +29,7 @@ void Parser::parseFile()
 			continue;
 	}
 	//inputFile.close();
+	//checkOrgOverlaping();
 	setCountersToZero();
 	inputFile.clear();
 	inputFile.seekg(0, ios::beg);
@@ -63,7 +64,7 @@ void Parser::relocate(string line)
 	}
 	else if (isLabel(line))
 		relocateLabel(line);
-	else if (isData(line))
+	else if (isData(line)||isDEF(line))
 		relocateData(line);
 	else if (isGlobal(line))
 		relocateGlobal(line);
@@ -106,12 +107,214 @@ void Parser::relocateLabel(string line)
 
 void Parser::relocateData(string line)
 {
+	int num = 1;
+
+	if (isDUP(line))
+	{
+		istringstream iss(line);
+		string word;
+
+		iss >> word;
+		string type = word;
+
+		iss >> word;
+		string konst1 = word;
+		iss >> word;
+		iss >> word;
+		string konst2 = word;
+
+		num = calculateExpression(konst1);
+
+		if (!isExpression(konst2) && !isConst(konst2))//tipa samo a
+		{
+			SymbolTable* sym = findSymbolByName(konst2);
+			if (sym != NULL)
+			{
+				//relokacija ide num puta
+			}
+		}
+		else if ((isConst(konst2) && !isExpression(konst2)) || (isConst(konst2) && isExpression(konst2)) || konst2 == "?")//samo konst vrednost
+		{
+			if (konst2 != "?")
+			{
+				int value = calculateExpression(konst2);
+				string hexCode;
+				int i = num;
+				while (i > 0)
+				{
+					if (line.substr(0, 2) == "DB")
+						hexCode = intAsHex(value);
+					if (line.substr(0, 2) == "DW")
+						hexCode = intTwoBytesAsHex(value);
+					if (line.substr(0, 2) == "DD")
+						hexCode = intDispAsHex(value);
+					i--;
+				}
+			}
+			else
+			{
+				string hexCode;
+				int i = num;
+				while (i > 0)
+				{
+					if (line.substr(0, 2) == "DB")
+						hexCode = "00";
+					if (line.substr(0, 2) == "DW")
+						hexCode = "0000";
+					if (line.substr(0, 2) == "DD")
+						hexCode = "00000000";
+				}
+			}
+		}
+		else if (!isConst(konst2) && isExpression(konst2))//a+konst vrednost
+		{
+
+		}
+	}
+	else if (isData(line))
+	{
+		int offset;
+		int id;
+		istringstream iss(line);
+		string word;
+		iss >> word;
+		iss >> word;
+		string sym = word;
+
+		if (!isExpression(sym) && !isConst(sym))//tipa samo a
+		{
+			string hexCode;
+			int disp;
+			SymbolTable* s = findSymbolByName(sym);
+			if (s != NULL)
+			{
+				//relokacija
+				offset = tmpSection->getLocationCounter();
+
+				if (s->getSection()->getOrgFlag() == true)
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = 0;
+					}
+					else
+					{
+						id = s->getId();
+						disp = 0 ;
+					}
+				}
+				else
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = s->getOffset();
+					}
+					else
+					{
+						id = s->getId();
+						disp = 0;
+					}
+				}
+				if (line.substr(0, 2) == "DB")
+					hexCode = intAsHex(disp);
+				if (line.substr(0, 2) == "DW")
+					hexCode = intTwoBytesAsHex(disp);
+				if (line.substr(0, 2) == "DD")
+					hexCode = intDispAsHex(disp);
+			}
+		}
+		else if ((isConst(sym) && !isExpression(sym))||(isConst(sym)&& isExpression(sym))||sym=="?")//samo konst vrednost, nema relokacije
+		{
+			string hexCode;
+			if (sym != "?")
+			{
+				int value = calculateExpression(sym);
+				if (line.substr(0, 2) == "DB")
+					hexCode = intAsHex(value);
+				if (line.substr(0, 2) == "DW")
+					hexCode = intTwoBytesAsHex(value);
+				if (line.substr(0, 2) == "DD")
+					hexCode = intDispAsHex(value);
+			}
+			else
+			{
+				if (line.substr(0, 2) == "DB")
+					hexCode = "00";
+				if (line.substr(0, 2) == "DW")
+					hexCode = "0000";
+				if (line.substr(0, 2) == "DD")
+					hexCode = "00000000";
+			}
+
+		}
+		else if (!isConst(sym) && isExpression(sym))//a+konst vrednost
+		{
+			string hexCode;
+			string op;
+			string exp;
+			string type = "R";
+			op = sym.substr(0, sym.find("+"));
+
+			int i = 0;
+			while (i < sym.length() && sym[i] != '+')
+				i++;
+			exp = sym.substr(i + 1, sym.length()-i-1);
+
+			int value = calculateExpression(exp);
+			int disp;
+			SymbolTable* s = findSymbolByName(op);
+			if (s != NULL)
+			{
+				//relokacija
+				offset = tmpSection->getLocationCounter();
+				
+				if (s->getSection()->getOrgFlag() == true)
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = 0 + value;
+					}
+					else
+					{
+						id = s->getId();
+						disp = 0 + value;
+					}
+				}
+				else
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = s->getOffset() + value;
+					}
+					else
+					{
+						id = s->getId();
+						disp = value;
+					}
+				}
+				if (line.substr(0, 2) == "DB")
+					hexCode=intAsHex(disp);
+				if(line.substr(0,2)=="DW")
+					hexCode= intTwoBytesAsHex(disp);
+				if(line.substr(0,2)=="DD")
+					hexCode = intDispAsHex(disp);
+			}
+			
+		}
+	}
+
 	if (line.substr(0, 2) == "DB")
-		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 1);
+		tmpSection->setLocationCounter((tmpSection->getLocationCounter() + 1)*num);
 	if (line.substr(0, 2) == "DW")
-		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 2);
+		tmpSection->setLocationCounter((tmpSection->getLocationCounter() + 2)*num);
 	if (line.substr(0, 2) == "DD")
-		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
+		tmpSection->setLocationCounter((tmpSection->getLocationCounter() + 4)*num);
+
+	
 }
 
 void Parser::contentArithmetic(string line)
@@ -238,17 +441,19 @@ void Parser::contentNoRelocateTwoOperands(string line)
 	{
 		code.append("00000");
 		if (instruction == "LOADUB")
-			code.append("000");
-		if (instruction == "LOADSB")
-			code.append("001");
-		if (instruction == "LOADUW")
 			code.append("011");
-		if (instruction == "STOREB")
-			code.append("100");
-		if (instruction == "STOREW")
+		if (instruction == "LOADSB")
+			code.append("111");
+		if (instruction == "LOADUW")
+			code.append("001");
+		if (instruction == "LOADSW")
 			code.append("101");
+		if (instruction == "STOREB")
+			code.append("011");
+		if (instruction == "STOREW")
+			code.append("001");
 		if (instruction == "LOAD" || instruction == "STORE")
-			code.append("110");		
+			code.append("000");		
 		code.append("000");
 	}
 	else
@@ -317,7 +522,14 @@ void Parser::relocateInstruction(string line)
 		}
 	}
 	if(isNoOperandInstruction(instruction))
-	{ }
+	{
+		string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));
+		string code = "";
+		code.append(opCode);
+		code.append("000000000000000000000000");
+
+		string hexCode = returnHexCode(code);
+	}
 }
 
 void Parser::contentNoRelocateOneOperand(string line)
@@ -799,17 +1011,19 @@ void Parser::contentRelocateTwoOperands(string line)
 		{
 			code.append("00000");
 			if (instruction == "LOADUB")
-				code.append("000");
-			if (instruction == "LOADSB")
-				code.append("001");
-			if (instruction == "LOADUW")
 				code.append("011");
-			if (instruction == "STOREB")
-				code.append("100");
-			if (instruction == "STOREW")
+			if (instruction == "LOADSB")
+				code.append("111");
+			if (instruction == "LOADUW")
+				code.append("001");
+			if (instruction == "LOADSW")
 				code.append("101");
+			if (instruction == "STOREB")
+				code.append("011");
+			if (instruction == "STOREW")
+				code.append("001");
 			if (instruction == "LOAD" || instruction == "STORE")
-				code.append("110");
+				code.append("000");
 			code.append("000");
 		}
 		else
@@ -948,17 +1162,19 @@ void Parser::contentRelocateTwoOperands(string line)
 		{
 			code.append("00000");
 			if (instruction == "LOADUB")
-				code.append("000");
-			if (instruction == "LOADSB")
-				code.append("001");
-			if (instruction == "LOADUW")
 				code.append("011");
-			if (instruction == "STOREB")
-				code.append("100");
-			if (instruction == "STOREW")
+			if (instruction == "LOADSB")
+				code.append("111");
+			if (instruction == "LOADUW")
+				code.append("001");
+			if (instruction == "LOADSW")
 				code.append("101");
+			if (instruction == "STOREB")
+				code.append("011");
+			if (instruction == "STOREW")
+				code.append("001");
 			if (instruction == "LOAD" || instruction == "STORE")
-				code.append("110");
+				code.append("000");
 			code.append("000");
 		}
 		else
@@ -1069,7 +1285,7 @@ void Parser::parse(string& line)
 		parseSection(line);
 	else if (isLabel(line))
 		parseLabel(line);
-	else if (isData(line))
+	else if (isData(line) || isDEF(line))
 		data(line);
 	else
 		instruction(line);
@@ -1079,8 +1295,14 @@ void Parser::parse(string& line)
 void Parser::parseGlobal(string line)
 {
 	string label = line.substr(8, line.length() - 8);
-	if(tmpSection!=NULL)
-		parseLabel(label);
+	SymbolTable* sym = findSymbolByName(label);
+	if (sym != NULL)
+	{
+		((Symbol*)sym)->setIdSection(-1);
+	}
+	else
+		if (tmpSection != NULL)
+			parseLabel(label);
 }
 
 void Parser::parseOrg(string line)
@@ -1126,36 +1348,91 @@ void Parser::parseLabel(string line)
 	size_t position = line.find(" ");
 	string more = line.substr(position+1, line.length() - s.length());//something has to be done with this
 
-	SymbolTable* sym = new Symbol(s);
-	previous = current;
-	current = sym;
-	sym->setSection(tmpSection);
-	((Symbol*)sym)->setType("SYM");
-	if (sym->getSection()->getOrgFlag() == true)
-		sym->setOffset(orgValue+sym->getSection()->getLocationCounter());
-	else
-		sym->setOffset(sym->getSection()->getLocationCounter());
-	((Symbol*)sym)->setIdSection(tmpSection->getId());
-	if(!isInSymbols(sym->getName()))
-	{
-		SymbolList->push_back(sym);
-		Symbols->push_back((Symbol*)sym);
-	}
-	
 	if (isData(more))
 		data(more);
 	else
+	{
+		SymbolTable* sym = new Symbol(s);
+		previous = current;
+		current = sym;
+		sym->setSection(tmpSection);
+		((Symbol*)sym)->setType("SYM");
+		if (sym->getSection()->getOrgFlag() == true)
+			sym->setOffset(orgValue + sym->getSection()->getLocationCounter());
+		else
+			sym->setOffset(sym->getSection()->getLocationCounter());
+		((Symbol*)sym)->setIdSection(tmpSection->getId());
+		if (!isInSymbols(sym->getName()))
+		{
+			SymbolList->push_back(sym);
+			Symbols->push_back((Symbol*)sym);
+		}
 		instruction(more);
+	}
 }
 
 void Parser::data(string line)
 {
-	if (line.substr(0, 2) == "DB")
-		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 1);
-	if (line.substr(0, 2) == "DW")
-		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 2);
-	if (line.substr(0, 2) == "DD")
-		tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
+	//string name = line.substr(0, line.find(":"));
+	//size_t position = line.find(" ");
+	//string more = line.substr(position + 1, line.length() - name.length());//something has to be done with this
+
+	int num=1;
+
+	if (isDUP(line))
+	{
+		istringstream iss(line);
+		string word;
+
+		iss >> word;
+		string type = word;
+
+		iss >> word;
+		string konst1 = word;
+		iss >> word;
+		iss >> word;
+		string konst2 = word;
+
+		num = calculateExpression(konst1);
+		if (line.substr(0, 2) == "DB")
+			tmpSection->setLocationCounter((tmpSection->getLocationCounter() + 1)*num);
+		if (line.substr(0, 2) == "DW")
+			tmpSection->setLocationCounter((tmpSection->getLocationCounter() + 2)*num);
+		if (line.substr(0, 2) == "DD")
+			tmpSection->setLocationCounter((tmpSection->getLocationCounter() + 4)*num);
+	}
+	else if (isData(line))
+	{
+		if (line.substr(0, 2) == "DB")
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 1);
+		if (line.substr(0, 2) == "DW")
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 2);
+		if (line.substr(0, 2) == "DD")
+			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
+
+	}
+
+	
+	if (isDEF(line))
+	{
+		istringstream iss(line);
+		string word;
+		iss >> word;
+
+		string symbol = word;
+		iss >> word;
+		iss >> word;
+		string val = word;
+		int value = calculateExpression(val);
+
+		SymbolTable* sym = new Symbol(symbol);
+		sym->setOffset(value);
+		((Symbol*)sym)->setIdSection(-1);
+		((Symbol*)sym)->setType("SYM");
+		//sym->setIsSection(false);
+		sym->setSection(tmpSection);
+		SymbolList->push_back(sym);
+	}
 }
 
 char* Parser::expressionToParse = new char[2];

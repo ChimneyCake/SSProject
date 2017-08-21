@@ -255,6 +255,26 @@ static bool isData(string text)
 		return false;
 }
 
+static bool isDUP(string text)
+{
+	toUpper(text);
+	string str = "DUP";
+	if (text.find(str) != std::string::npos)
+		return true;
+	else
+		return false;
+}
+
+static bool isDEF(string text)
+{
+	toUpper(text);
+	string str = "DEF";
+	if (text.find(str) != std::string::npos)
+		return true;
+	else
+		return false;
+}
+
 static bool isArithmeticInstruction(string instruction)
 {
 	toUpper(instruction);
@@ -385,6 +405,22 @@ static string intDispAsHex(int x)
 	return a;
 }
 
+static string intTwoBytesAsHex(int x)
+{
+	std::stringstream stream;
+	stream << std::hex << x;
+	std::string result(stream.str());
+	string a;
+	int b = 4 - result.length();
+	while (b > 0)
+	{
+		a += '0';
+		b--;
+	}
+	a.append(result);
+	return a;
+}
+
 static string intRegAsBinary(int a)
 {
 	//int a = 1111165117;
@@ -462,7 +498,7 @@ static void setCountersToZero()
 	}
 }
 
-static bool checkOrgOverlaping(int begin, int size)
+static bool checkOrgOverlaping()
 {
 
 }

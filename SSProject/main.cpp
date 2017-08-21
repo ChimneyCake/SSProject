@@ -13,12 +13,12 @@ int main()
 	parser->calculateExpression("7+8");
 	parser->calculateExpression("23+17");
 	parser->calculateExpression("-4+1");*/
-	parser->parseFile();
-	//cout << isRegindDisp("[R12+a]");
-	/*string s = "aksa";
-	if (std::string::npos != s.find_first_of("0123456789")) {
-		std::cout << "digit(s)found!" << std::endl;
-	}*/
-	cout << intAsHex(-4);
+	//parser->parseFile();
+	string sym = "a+1234";
+	int i = 0;
+	while (i < sym.length() && sym[i] != '+')
+		i++;
+	string op = sym.substr(i + 1, sym.length() - i - 1);
+	cout << op;
 	return 0;
 }
