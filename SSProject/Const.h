@@ -493,7 +493,7 @@ static void setCountersToZero()
 	}
 }
 
-static bool checkOrgOverlaping()
+static void checkOrgOverlaping()
 {
 
 }
@@ -546,17 +546,30 @@ static string returnAsLittleEndian(string text)
 {
 	string tmp = "";
 
-	tmp += text[6];
-	tmp += text[7];
+	if (text.length() == 2)
+		tmp = text;
+	else if (text.length() == 4)
+	{
+		tmp += text[2];
+		tmp += text[3];
 
-	tmp += text[4];
-	tmp += text[5];
+		tmp += text[0];
+		tmp += text[1];
+	}
+	else
+	{
+		tmp += text[6];
+		tmp += text[7];
 
-	tmp += text[2];
-	tmp += text[3];
+		tmp += text[4];
+		tmp += text[5];
 
-	tmp += text[0];
-	tmp += text[1];
+		tmp += text[2];
+		tmp += text[3];
+
+		tmp += text[0];
+		tmp += text[1];
+	}
 
 	return tmp;
 }

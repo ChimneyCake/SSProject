@@ -28,7 +28,7 @@ void Parser::parseFile()
 		else
 			continue;
 	}
-	//checkOrgOverlaping();
+	checkOrgOverlaping();
 	setCountersToZero();
 	inputFile.clear();
 	inputFile.seekg(0, ios::beg);
@@ -118,18 +118,76 @@ void Parser::relocateData(string line)
 
 		if (!isExpression(konst2) && !isConst(konst2))//tipa samo a
 		{
-			SymbolTable* sym = findSymbolByName(konst2);
-			if (sym != NULL)
+			int offset;
+			int id;
+			int disp;
+			string hexCode;
+			SymbolTable* s = findSymbolByName(konst2);
+			if (s != NULL)
 			{
-				//relokacija ide num puta
+				//relokacija
+				offset = tmpSection->getLocationCounter();
+
+				if (s->getSection()->getOrgFlag() == true)
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = 0;
+					}
+					else
+					{
+						id = s->getId();
+						disp = 0;
+					}
+				}
+				else
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = s->getOffset();
+					}
+					else
+					{
+						id = s->getId();
+						disp = 0;
+					}
+				}
+				if (line.substr(0, 2) == "DB")
+					hexCode = intAsHex(disp);
+				if (line.substr(0, 2) == "DW")
+					hexCode = intTwoBytesAsHex(disp);
+				if (line.substr(0, 2) == "DD")
+					hexCode = intDispAsHex(disp);
+				int i = num;
+				while (i > 0)
+				{
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setOffset(offset);
+					if (line.substr(0, 2) == "DB")
+						offset += 1;
+					if (line.substr(0, 2) == "DW")
+						offset += 2;
+					if (line.substr(0, 2) == "DD")
+						offset += 4;
+					reloc->setId(id);
+					reloc->setType("R");
+					tmpSection->relocationTableList->push_back(reloc);
+					Content* con = new Content();
+					con->setInstructionHexCode(hexCode);
+					tmpSection->contentList->push_back(con);
+					i--;
+				}
 			}
+
 		}
 		else if ((isConst(konst2) && !isExpression(konst2)) || (isConst(konst2) && isExpression(konst2)) || konst2 == "?")//samo konst vrednost
 		{
+			string hexCode;
 			if (konst2 != "?")
 			{
 				int value = calculateExpression(konst2);
-				string hexCode;
 				int i = num;
 				while (i > 0)
 				{
@@ -144,7 +202,6 @@ void Parser::relocateData(string line)
 			}
 			else
 			{
-				string hexCode;
 				int i = num;
 				while (i > 0)
 				{
@@ -156,10 +213,88 @@ void Parser::relocateData(string line)
 						hexCode = "00000000";
 				}
 			}
+
+			int i = num;
+			while (i > 0)
+			{
+				Content* con = new Content();
+				con->setInstructionHexCode(hexCode);
+				tmpSection->contentList->push_back(con);
+				i--;
+			}
 		}
 		else if (!isConst(konst2) && isExpression(konst2))//a+konst vrednost
 		{
+			string op;
+			string exp;
+			op = konst2.substr(0, konst2.find("+"));
 
+			int i = 0;
+			while (i < konst2.length() && konst2[i] != '+')
+				i++;
+			exp = konst2.substr(i + 1, konst2.length() - i - 1);
+
+			int value = calculateExpression(exp);
+
+			SymbolTable* s = findSymbolByName(op);
+			if (s != NULL)
+			{
+				int offset;
+				int id;
+				string hexCode;
+				int disp;
+				if (s->getSection()->getOrgFlag() == true)
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = 0 + value;
+					}
+					else
+					{
+						id = s->getId();
+						disp = 0 + value;
+					}
+				}
+				else
+				{
+					if (s->getScope() == "local")
+					{
+						id = tmpSection->getId();
+						disp = s->getOffset() + value;
+					}
+					else
+					{
+						id = s->getId();
+						disp = value;
+					}
+				}
+				if (line.substr(0, 2) == "DB")
+					hexCode = intAsHex(disp);
+				if (line.substr(0, 2) == "DW")
+					hexCode = intTwoBytesAsHex(disp);
+				if (line.substr(0, 2) == "DD")
+					hexCode = intDispAsHex(disp);
+				int i = num;
+				while (i > 0)
+				{
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setOffset(offset);
+					if (line.substr(0, 2) == "DB")
+						offset += 1;
+					if (line.substr(0, 2) == "DW")
+						offset += 2;
+					if (line.substr(0, 2) == "DD")
+						offset += 4;
+					reloc->setId(id);
+					reloc->setType("R");
+					tmpSection->relocationTableList->push_back(reloc);
+					Content* con = new Content();
+					con->setInstructionHexCode(hexCode);
+					tmpSection->contentList->push_back(con);
+					i--;
+				}
+			}
 		}
 	}
 	else if (isData(line))
@@ -214,6 +349,13 @@ void Parser::relocateData(string line)
 					hexCode = intTwoBytesAsHex(disp);
 				if (line.substr(0, 2) == "DD")
 					hexCode = intDispAsHex(disp);
+				RelocationTable* reloc = new RelocationTable();
+				reloc->setOffset(offset);
+				reloc->setId(id);
+				reloc->setType("R");
+				tmpSection->relocationTableList->push_back(reloc);
+				Content* con = new Content();
+				con->setInstructionHexCode(hexCode);
 			}
 		}
 		else if ((isConst(sym) && !isExpression(sym)) || (isConst(sym) && isExpression(sym)) || sym == "?")//samo konst vrednost, nema relokacije
@@ -238,7 +380,9 @@ void Parser::relocateData(string line)
 				if (line.substr(0, 2) == "DD")
 					hexCode = "00000000";
 			}
-
+			Content* con = new Content();
+			con->setInstructionHexCode(hexCode);
+			tmpSection->contentList->push_back(con);
 		}
 		else if (!isConst(sym) && isExpression(sym))//a+konst vrednost
 		{
@@ -293,6 +437,14 @@ void Parser::relocateData(string line)
 					hexCode = intTwoBytesAsHex(disp);
 				if (line.substr(0, 2) == "DD")
 					hexCode = intDispAsHex(disp);
+				RelocationTable* reloc = new RelocationTable();
+				reloc->setOffset(offset);
+				reloc->setId(id);
+				reloc->setType(type);
+				tmpSection->relocationTableList->push_back(reloc);
+				Content* con = new Content();
+				con->setInstructionHexCode(hexCode);
+				tmpSection->contentList->push_back(con);
 			}
 
 		}
@@ -615,7 +767,7 @@ void Parser::contentRelocateOneOperand(string line)
 					{
 						if (sym->getScope() == "local")
 						{
-							id = sym->getSection()->getId();
+							id = tmpSection->getId();
 							disp = 0;
 						}
 						else
@@ -633,7 +785,7 @@ void Parser::contentRelocateOneOperand(string line)
 					{
 						if (sym->getScope() == "local")
 						{
-							id = sym->getSection()->getId();
+							id = tmpSection->getId();
 							disp = sym->getOffset() - 4;
 						}
 						else
@@ -704,7 +856,7 @@ void Parser::contentRelocateOneOperand(string line)
 						{
 							if (sym->getScope() == "local")
 							{
-								id = sym->getSection()->getId();
+								id = tmpSection->getId();
 								disp = 0 + res;
 							}
 							else
@@ -722,7 +874,7 @@ void Parser::contentRelocateOneOperand(string line)
 						{
 							if (sym->getScope() == "local")
 							{
-								id = sym->getSection()->getId();
+								id = tmpSection->getId();
 								disp = sym->getOffset() - 4 + res;
 							}
 							else
@@ -797,7 +949,7 @@ void Parser::contentRelocateOneOperand(string line)
 				{
 					if (sym->getScope() == "local")
 					{
-						id = ((Symbol*)sym)->getIdSection();
+						id = tmpSection->getId();
 						disp = sym->getOffset();
 					}
 					else
@@ -868,7 +1020,7 @@ void Parser::contentRelocateOneOperand(string line)
 				{
 					if (sym->getScope() == "local")
 					{
-						id = ((Symbol*)sym)->getIdSection();
+						id = tmpSection->getId();
 						disp = sym->getOffset() + res;
 					}
 					else
@@ -977,7 +1129,7 @@ void Parser::contentRelocateTwoOperands(string line)
 					{
 						if (sym->getScope() == "local")
 						{
-							id = sym->getSection()->getId();
+							id = tmpSection->getId();
 							disp = 0;
 						}
 						else
@@ -995,7 +1147,7 @@ void Parser::contentRelocateTwoOperands(string line)
 					{
 						if (sym->getScope() == "local")
 						{
-							id = sym->getSection()->getId();
+							id = tmpSection->getId();
 							disp = sym->getOffset() - 4;
 						}
 						else
@@ -1064,7 +1216,7 @@ void Parser::contentRelocateTwoOperands(string line)
 					{
 						if (sym->getScope() == "local")
 						{
-							id = sym->getSection()->getId();
+							id = tmpSection->getId();
 							disp = 0 + res;
 						}
 						else
@@ -1082,7 +1234,7 @@ void Parser::contentRelocateTwoOperands(string line)
 					{
 						if (sym->getScope() == "local")
 						{
-							id = sym->getSection()->getId();
+							id = tmpSection->getId();
 							disp = sym->getOffset() - 4 + res;
 						}
 						else
