@@ -13,12 +13,10 @@ int main()
 	parser->calculateExpression("7+8");
 	parser->calculateExpression("23+17");
 	parser->calculateExpression("-4+1");*/
-	//parser->parseFile();
-	string sym = "a+1234";
-	int i = 0;
-	while (i < sym.length() && sym[i] != '+')
-		i++;
-	string op = sym.substr(i + 1, sym.length() - i - 1);
-	cout << op;
+	parser->parseFile();
+	string text = "02f10000";
+	cout << returnAsLittleEndian(text);
+	int x = 0x02f1;
+	cout << returnAsHexString(x);
 	return 0;
 }

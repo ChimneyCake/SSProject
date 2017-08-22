@@ -15,7 +15,6 @@
 #include <bitset>
 
 using namespace std;
-
 static vector<string> Sections = { ".RODATA", ".DATA", ".BSS", ".TEXT" };
 static vector<string> Registers= { "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "PC", "SP"};
 static vector<string> SystemDefinedWords = { "DUP", "DEF", "ORG" };
@@ -47,8 +46,6 @@ static list<Section*>* OrgedSections = new list<Section*>();//list of all "ORG" 
 static list<Section*>* SectionList = new list<Section*>();//list of all sections
 
 static list<Symbol*>* Symbols = new list<Symbol*>();//list od symbols that are not sections
-
-static list<RelocationTable*>* RelocationTables = new list<RelocationTable*>();//list of all relocation tables
 
 static void toUpper(string &text)
 {
@@ -117,8 +114,6 @@ static bool isRegdir(string opCode)
 static bool isRegindDisp(string opCode)
 {
 	toUpper(opCode);
-	//regex reginddisp("\\[R[[:digit:]][0-5]?\\+[abc[:digit:]]+\\]");
-	//return regex_match(opCode, reginddisp);
 	if (opCode[0] == '[')
 	{
 		if (opCode[3]=='+'||opCode[4] == '+')
@@ -545,6 +540,43 @@ static bool isExpression(string text)
 static bool isConst(string text)
 {
 	return text.find_first_not_of("0123456789") == std::string::npos;
+}
+
+static string returnAsLittleEndian(string text)
+{
+	string tmp = "";
+
+	tmp += text[6];
+	tmp += text[7];
+
+	tmp += text[4];
+	tmp += text[5];
+
+	tmp += text[2];
+	tmp += text[3];
+
+	tmp += text[0];
+	tmp += text[1];
+
+	return tmp;
+}
+
+static string returnAsHexString(int text)
+{
+	std::stringstream stream;
+	stream << std::hex << text;
+	std::string result(stream.str());
+	string a;
+	int b = 8 - result.length();
+	a.append("0x");
+
+	while (b > 0)
+	{
+		a.append("0");
+		b--;
+	}
+	a.append(result);
+	return a;
 }
 #endif // !Const_
 

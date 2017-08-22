@@ -28,19 +28,16 @@ void Parser::parseFile()
 		else
 			continue;
 	}
-	//inputFile.close();
 	//checkOrgOverlaping();
 	setCountersToZero();
 	inputFile.clear();
 	inputFile.seekg(0, ios::beg);
-	//inputFile.open(path);
 	while (!inputFile.eof())
 	{
 		getline(inputFile, line);
 		if (line != "")
 		{
 			relocate(line);
-			//fillSection(line);
 		}
 		else
 			continue;
@@ -49,17 +46,11 @@ void Parser::parseFile()
 	writeInFile();
 }
 
-void Parser::fillSection(string line)
-{
-
-}
-
 void Parser::relocate(string line)
 {
 	if (isSection(line))
 	{
 		tmpSection = findSectionByName(line);
-		//cout << tmpSection->getName();
 		tmpSection->setLocationCounter(0);
 	}
 	else if (isLabel(line))
@@ -361,9 +352,9 @@ void Parser::contentArithmetic(string line)
 	string hexCode = returnHexCode(code);
 	cout << hexCode<<endl;
 
-	Content* con = new Content(hexCode);
-	con->setSection(tmpSection);
-	tmpSection->contentList->push_back(con);
+	Content* con = new Content();
+	con->setInstructionHexCode(hexCode);
+	((Section*)tmpSection)->contentList->push_back(con);
 }
 
 void Parser::contentStack(string line)
@@ -392,9 +383,10 @@ void Parser::contentStack(string line)
 	string hexCode = returnHexCode(code);
 	cout << hexCode << endl;
 
-	Content* con = new Content(hexCode);
-	con->setSection(tmpSection);
-	tmpSection->contentList->push_back(con);
+	Content* con = new Content();
+	con->setInstructionHexCode(hexCode);
+	((Section*)tmpSection)->contentList->push_back(con);
+
 }
 
 void Parser::contentNoRelocateTwoOperands(string line)
@@ -464,10 +456,9 @@ void Parser::contentNoRelocateTwoOperands(string line)
 	string hexCode = returnHexCode(code);
 
 	cout << hexCode << endl;
-
-	Content* con = new Content(hexCode);
-	con->setSection(tmpSection);
-	tmpSection->contentList->push_back(con);
+	Content* con = new Content();
+	con->setInstructionHexCode(hexCode);
+	((Section*)tmpSection)->contentList->push_back(con);
 }
 
 void Parser::relocateInstruction(string line)
@@ -569,9 +560,10 @@ void Parser::contentNoRelocateOneOperand(string line)
 	string hexCode = returnHexCode(code);
 
 	cout << hexCode;
-	Content* con = new Content(hexCode);
-	con->setSection(tmpSection);
-	tmpSection->contentList->push_back(con);
+
+	Content* con = new Content();
+	con->setInstructionHexCode(hexCode);
+	((Section*)tmpSection)->contentList->push_back(con);
 }
 
 void Parser::contentRelocateOneOperand(string line)
@@ -600,9 +592,9 @@ void Parser::contentRelocateOneOperand(string line)
 			SymbolTable* sym = findSymbolByName(operand);
 			if (sym != NULL)
 			{
+				offset = tmpSection->getLocationCounter() - 4;
 				if (sym->getSection()->getOrgFlag() == true)
 				{
-					offset = tmpSection->getLocationCounter() - 4;
 					if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
 					{
 						id = 0;
@@ -611,7 +603,11 @@ void Parser::contentRelocateOneOperand(string line)
 						else
 							disp = 0;
 					}
-
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setType(type);
+					reloc->setOffset(offset);
+					reloc->setId(id);
+					((Section*)tmpSection)->relocationTableList->push_back(reloc);
 				}
 				else
 				{
@@ -627,6 +623,11 @@ void Parser::contentRelocateOneOperand(string line)
 							id = sym->getId();
 							disp = 0 - 4;
 						}
+						RelocationTable* reloc = new RelocationTable();
+						reloc->setType(type);
+						reloc->setOffset(offset);
+						reloc->setId(id);
+						((Section*)tmpSection)->relocationTableList->push_back(reloc);
 					}
 					else//PC nije iz ORG, simbol nije iz ORG
 					{
@@ -640,7 +641,11 @@ void Parser::contentRelocateOneOperand(string line)
 							id = sym->getId();
 							disp = 0 - 4;
 						}
-
+						RelocationTable* reloc = new RelocationTable();
+						reloc->setType(type);
+						reloc->setOffset(offset);
+						reloc->setId(id);
+						((Section*)tmpSection)->relocationTableList->push_back(reloc);
 					}
 				}
 			}
@@ -653,6 +658,11 @@ void Parser::contentRelocateOneOperand(string line)
 				offset = tmpSection->getLocationCounter() - 4;
 				id = 0;
 				disp =res-4;
+				RelocationTable* reloc = new RelocationTable();
+				reloc->setType(type);
+				reloc->setOffset(offset);
+				reloc->setId(id);
+				((Section*)tmpSection)->relocationTableList->push_back(reloc);
 			}
 			else if (!isConst(operand) && isExpression(operand))
 			{
@@ -671,9 +681,9 @@ void Parser::contentRelocateOneOperand(string line)
 				SymbolTable* sym = findSymbolByName(op);
 				if (sym != NULL)
 				{
+					offset = tmpSection->getLocationCounter() - 4;
 					if (sym->getSection()->getOrgFlag() == true)
 					{
-						offset = tmpSection->getLocationCounter() - 4;
 						if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
 						{
 							id = 0;
@@ -682,7 +692,11 @@ void Parser::contentRelocateOneOperand(string line)
 							else
 								disp = 0+res;
 						}
-
+						RelocationTable* reloc = new RelocationTable();
+						reloc->setType(type);
+						reloc->setOffset(offset);
+						reloc->setId(id);
+						((Section*)tmpSection)->relocationTableList->push_back(reloc);
 					}
 					else
 					{
@@ -698,6 +712,11 @@ void Parser::contentRelocateOneOperand(string line)
 								id = sym->getId();
 								disp = 0 - 4+res;
 							}
+							RelocationTable* reloc = new RelocationTable();
+							reloc->setType(type);
+							reloc->setOffset(offset);
+							reloc->setId(id);
+							((Section*)tmpSection)->relocationTableList->push_back(reloc);
 						}
 						else//PC nije iz ORG, simbol nije iz ORG
 						{
@@ -711,7 +730,11 @@ void Parser::contentRelocateOneOperand(string line)
 								id = sym->getId();
 								disp = 0 - 4+res;
 							}
-
+							RelocationTable* reloc = new RelocationTable();
+							reloc->setType(type);
+							reloc->setOffset(offset);
+							reloc->setId(id);
+							((Section*)tmpSection)->relocationTableList->push_back(reloc);
 						}
 					}
 				}
@@ -730,6 +753,10 @@ void Parser::contentRelocateOneOperand(string line)
 		string hexCode = returnHexCode(code);
 		cout << memorydisplacement;
 		cout << hexCode << endl;
+		Content* con = new Content();
+		con->setInstructionHexCode(hexCode);
+		con->setDisp(memorydisplacement);
+		((Section*)tmpSection)->contentList->push_back(con);
 	}
 	else//else grana kada nije pcrelativno
 	{
@@ -765,12 +792,12 @@ void Parser::contentRelocateOneOperand(string line)
 			SymbolTable* sym = findSymbolByName(operand);
 			if (sym != NULL)
 			{
+				offset = tmpSection->getLocationCounter() - 8;
 				if (sym->getSection()->getOrgFlag() == false)
 				{
-					offset = tmpSection->getLocationCounter() - 8;
 					if (sym->getScope() == "local")
 					{
-						id = tmpSection->getId();
+						id = ((Symbol*)sym)->getIdSection();
 						disp = sym->getOffset();
 					}
 					else
@@ -786,7 +813,25 @@ void Parser::contentRelocateOneOperand(string line)
 					{
 						reg = "00000";
 					}
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setType(type);
+					reloc->setOffset(offset);
+					reloc->setId(id);
+					((Section*)tmpSection)->relocationTableList->push_back(reloc);
 				}
+				else//nema relokacije ako je orgovana sekcija, ali mora da se popuni memorija
+				{
+					disp = 0;
+					if (addressMode == "reginddisp")
+					{
+						reg = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg = "00000";
+					}
+				}
+				
 			}
 		}
 		else if (isConst(operand) && !isExpression(operand))
@@ -795,6 +840,11 @@ void Parser::contentRelocateOneOperand(string line)
 			offset = tmpSection->getLocationCounter() - 8;
 			id = 0;
 			disp = res;
+			RelocationTable* reloc = new RelocationTable();
+			reloc->setType(type);
+			reloc->setOffset(offset);
+			reloc->setId(id);
+			((Section*)tmpSection)->relocationTableList->push_back(reloc);
 		}
 		else if (!isConst(operand) && isExpression(operand))
 		{
@@ -813,12 +863,12 @@ void Parser::contentRelocateOneOperand(string line)
 			SymbolTable* sym = findSymbolByName(op);
 			if (sym != NULL)
 			{
+				offset = tmpSection->getLocationCounter() - 8;
 				if (sym->getSection()->getOrgFlag() == false)
 				{
-					offset = tmpSection->getLocationCounter() - 8;
 					if (sym->getScope() == "local")
 					{
-						id = tmpSection->getId();
+						id = ((Symbol*)sym)->getIdSection();
 						disp = sym->getOffset()+res;
 					}
 					else
@@ -826,6 +876,23 @@ void Parser::contentRelocateOneOperand(string line)
 						id = sym->getId();
 						disp = 0+res;
 					}
+					if (addressMode == "reginddisp")
+					{
+						reg = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg = "00000";
+					}
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setType(type);
+					reloc->setOffset(offset);
+					reloc->setId(id);
+					((Section*)tmpSection)->relocationTableList->push_back(reloc);
+				}
+				else//nema relokacije, ali mora da se popuni memorija
+				{
+					disp = 0;
 					if (addressMode == "reginddisp")
 					{
 						reg = intRegAsBinary(RegisterCodes.at(reg));
@@ -847,6 +914,10 @@ void Parser::contentRelocateOneOperand(string line)
 		code.append("0000000000000000");
 		string memorydisplacement = intDispAsHex(disp);
 		string hexCode = returnHexCode(code);
+		Content* con = new Content();
+		con->setInstructionHexCode(hexCode);
+		con->setDisp(memorydisplacement);
+		((Section*)tmpSection)->contentList->push_back(con);
 	}
 }
 
@@ -882,9 +953,9 @@ void Parser::contentRelocateTwoOperands(string line)
 			SymbolTable* sym = findSymbolByName(operand);
 			if (sym != NULL)
 			{
+				offset = tmpSection->getLocationCounter() - 4;
 				if (sym->getSection()->getOrgFlag() == true)
 				{
-					offset = tmpSection->getLocationCounter() - 4;
 					if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
 					{
 						id = 0;
@@ -893,6 +964,11 @@ void Parser::contentRelocateTwoOperands(string line)
 						else
 							disp = 0;
 					}
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setType(type);
+					reloc->setOffset(offset);
+					reloc->setId(id);
+					((Section*)tmpSection)->relocationTableList->push_back(reloc);
 
 				}
 				else
@@ -909,6 +985,11 @@ void Parser::contentRelocateTwoOperands(string line)
 							id = sym->getId();
 							disp = 0 - 4;
 						}
+						RelocationTable* reloc = new RelocationTable();
+						reloc->setType(type);
+						reloc->setOffset(offset);
+						reloc->setId(id);
+						((Section*)tmpSection)->relocationTableList->push_back(reloc);
 					}
 					else//PC nije iz ORG, simbol nije iz ORG
 					{
@@ -922,7 +1003,11 @@ void Parser::contentRelocateTwoOperands(string line)
 							id = sym->getId();
 							disp = 0 - 4;
 						}
-
+						RelocationTable* reloc = new RelocationTable();
+						reloc->setType(type);
+						reloc->setOffset(offset);
+						reloc->setId(id);
+						((Section*)tmpSection)->relocationTableList->push_back(reloc);
 					}
 				}
 			}
@@ -933,6 +1018,11 @@ void Parser::contentRelocateTwoOperands(string line)
 			offset = tmpSection->getLocationCounter() - 4;
 			id = 0;
 			disp = res - 4;
+			RelocationTable* reloc = new RelocationTable();
+			reloc->setType(type);
+			reloc->setOffset(offset);
+			reloc->setId(id);
+			((Section*)tmpSection)->relocationTableList->push_back(reloc);
 		}
 		else if (!isConst(operand) && isExpression(operand))
 		{
@@ -951,10 +1041,9 @@ void Parser::contentRelocateTwoOperands(string line)
 			SymbolTable* sym = findSymbolByName(op);
 			if (sym != NULL)
 			{
-
+				offset = tmpSection->getLocationCounter() - 4;
 				if (sym->getSection()->getOrgFlag() == true)
 				{
-					offset = tmpSection->getLocationCounter() - 4;
 					if (tmpSection->getOrgFlag() == false)//PC nije ORG, a simbol jeste
 					{
 						id = 0;
@@ -963,7 +1052,11 @@ void Parser::contentRelocateTwoOperands(string line)
 						else
 							disp = 0+res;
 					}
-
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setType(type);
+					reloc->setOffset(offset);
+					reloc->setId(id);
+					((Section*)tmpSection)->relocationTableList->push_back(reloc);
 				}
 				else
 				{
@@ -979,6 +1072,11 @@ void Parser::contentRelocateTwoOperands(string line)
 							id = sym->getId();
 							disp = 0 - 4+res;
 						}
+						RelocationTable* reloc = new RelocationTable();
+						reloc->setType(type);
+						reloc->setOffset(offset);
+						reloc->setId(id);
+						((Section*)tmpSection)->relocationTableList->push_back(reloc);
 					}
 					else//PC nije iz ORG, simbol nije iz ORG
 					{
@@ -992,7 +1090,11 @@ void Parser::contentRelocateTwoOperands(string line)
 							id = sym->getId();
 							disp = 0 - 4+res;
 						}
-
+						RelocationTable* reloc = new RelocationTable();
+						reloc->setType(type);
+						reloc->setOffset(offset);
+						reloc->setId(id);
+						((Section*)tmpSection)->relocationTableList->push_back(reloc);
 					}
 				}
 			}
@@ -1034,6 +1136,10 @@ void Parser::contentRelocateTwoOperands(string line)
 		string hexCode = returnHexCode(code);
 		cout << memorydisplacement;
 		cout << hexCode << endl;
+		Content* con = new Content();
+		con->setInstructionHexCode(hexCode);
+		con->setDisp(memorydisplacement);
+		((Section*)tmpSection)->contentList->push_back(con);
 	}
 	else//else grana za !=pcrel
 	{
@@ -1074,12 +1180,12 @@ void Parser::contentRelocateTwoOperands(string line)
 			SymbolTable* sym = findSymbolByName(operand);
 			if (sym != NULL)
 			{
+				offset = tmpSection->getLocationCounter() - 8;
 				if (sym->getSection()->getOrgFlag() == false)
 				{
-					offset = tmpSection->getLocationCounter() - 8;
 					if (sym->getScope() == "local")
 					{
-						id = tmpSection->getId();
+						id = ((Symbol*)sym)->getIdSection();
 						disp = sym->getOffset();
 					}
 					else
@@ -1095,7 +1201,23 @@ void Parser::contentRelocateTwoOperands(string line)
 					{
 						reg1 = "00000";
 					}
-					reg0 = intRegAsBinary(RegisterCodes.at(second));
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setType(type);
+					reloc->setOffset(offset);
+					reloc->setId(id);
+					((Section*)tmpSection)->relocationTableList->push_back(reloc);
+				}
+				else
+				{
+					disp = 0;
+					if (addressMode == "reginddisp")
+					{
+						reg1 = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg1 = "00000";
+					}
 				}
 			}
 		}
@@ -1106,6 +1228,11 @@ void Parser::contentRelocateTwoOperands(string line)
 			id = 0;
 			disp = res;
 			reg1 = "00000";
+			RelocationTable* reloc = new RelocationTable();
+			reloc->setType(type);
+			reloc->setOffset(offset);
+			reloc->setId(id);
+			((Section*)tmpSection)->relocationTableList->push_back(reloc);
 		}
 		else if (!isConst(operand) && isExpression(operand))
 		{
@@ -1125,12 +1252,12 @@ void Parser::contentRelocateTwoOperands(string line)
 
 			if (sym != NULL)
 			{
+				offset = tmpSection->getLocationCounter() - 8;
 				if (sym->getSection()->getOrgFlag() == false)
 				{
-					offset = tmpSection->getLocationCounter() - 8;
 					if (sym->getScope() == "local")
 					{
-						id = tmpSection->getId();
+						id = ((Symbol*)sym)->getIdSection();
 						disp = sym->getOffset()+res;
 					}
 					else
@@ -1146,7 +1273,23 @@ void Parser::contentRelocateTwoOperands(string line)
 					{
 						reg1 = "00000";
 					}
-					
+					RelocationTable* reloc = new RelocationTable();
+					reloc->setType(type);
+					reloc->setOffset(offset);
+					reloc->setId(id);
+					((Section*)tmpSection)->relocationTableList->push_back(reloc);
+				}
+				else
+				{
+					disp = 0;
+					if (addressMode == "reginddisp")
+					{
+						reg1 = intRegAsBinary(RegisterCodes.at(reg));
+					}
+					else
+					{
+						reg1 = "00000";
+					}
 				}
 			}
 		}
@@ -1186,6 +1329,11 @@ void Parser::contentRelocateTwoOperands(string line)
 		string hexCode = returnHexCode(code);
 		cout << memorydisplacement;
 		cout << hexCode << endl;
+
+		Content* con = new Content();
+		con->setInstructionHexCode(hexCode);
+		con->setDisp(memorydisplacement);
+		((Section*)tmpSection)->contentList->push_back(con);
 	}
 }
 

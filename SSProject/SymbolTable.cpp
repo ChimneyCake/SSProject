@@ -84,27 +84,25 @@ Section::Section(string name) :SymbolTable(name)
 	type = "SEG";
 	locationCounter = 0;
 	setIsSection(1);
+	this->relocationTableList = new list<RelocationTable*>();
+	this->contentList = new list<Content*>();
 }
 
-//RelocationTable* Section::getRelocTable()
-//{
-//	return this->relocTable;
-//}
-//
-//void Section::setRelocTable(RelocationTable* reloc)
-//{
-//	this->relocTable = reloc;
-//}
-//
-//Content* Section::getContent()
-//{
-//	return this->content;
-//}
-//
-//void Section::setContent(Content* content)
-//{
-//	this->content = content;
-//}
+Section::~Section()
+{
+	list<Content*>::iterator it;
+	for (it = contentList->begin(); it != contentList->end(); ++it)
+	{
+		delete *it;
+	}
+	list<RelocationTable*>::iterator itr;
+	for (itr = relocationTableList->begin(); itr != relocationTableList->end(); ++itr)
+	{
+		delete *itr;
+	}
+	delete contentList;
+	delete relocationTableList;
+}
 
 unsigned int Section::getLocationCounter()
 {

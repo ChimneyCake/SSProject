@@ -1,30 +1,20 @@
 #include "RelocationTable.h"
+#include "Const.h"
 
-RelocationTable::RelocationTable(int offset, string type, unsigned int id)
+RelocationTable::RelocationTable()
 {
-	this->offset = offset;
-	this->type = type;
-	this->id = id;
+	offset = "";
 }
 
-Section* RelocationTable::getSection()
-{
-	return this->section;
-}
-
-void RelocationTable::setSection(Section* section)
-{
-	this->section = section;
-}
-
-int RelocationTable::getOffset()
+string RelocationTable::getOffset()
 {
 	return this->offset;
 }
 
 void RelocationTable::setOffset(int offset)
 {
-	this->offset = offset;
+	string tmp = returnAsHexString(offset);
+	this->offset = tmp;
 }
 
 string RelocationTable::getType()

@@ -23,16 +23,15 @@ private:
 	unsigned int id = statid++;
 	string scope;//local or global
 	bool isSection;
-
 public:
 
 	SymbolTable(string);
-	~SymbolTable() {};
+	~SymbolTable() {
+		delete section;
+	};
 
 	string getName();
 	void setName(string);
-
-	
 
 	int getOffset();
 	void setOffset(int);
@@ -58,7 +57,7 @@ private:
 
 public:
 	Section(string);
-	~Section(){}
+	~Section();
 	bool getOrgFlag();
 	void setOrgFlag(bool);
 	string getType();
@@ -84,7 +83,6 @@ public:
 	void setIdSection(int);
 	int getValue();
 	void setValue(int);
-
 };
 
 #endif

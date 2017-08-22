@@ -33,7 +33,6 @@ public:
 	void parse(string&);//first pass
 	void writeInFile();
 	void relocate(string);
-	void fillSection(string);
 
 	void relocateLabel(string);
 	void relocateData(string);
@@ -56,8 +55,6 @@ public:
 	static int number();
 	static int factor();
 	static int term();
-
-
 
 	void parseOrg(string);
 	void parseSection(string);

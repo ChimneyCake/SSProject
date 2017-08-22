@@ -1,26 +1,28 @@
 #include "Content.h"
-
-Content::Content(string name)
+#include "Const.h"
+Content::Content()
 {
-	this->hexCode = name;
+	disp = "";
 }
 
-Section* Content::getSection()
+string Content::getInstructionHexCode()
 {
-	return this->section;
+	return this->instructionHexCode;
 }
 
-void Content::setSection(Section* section)
+void Content::setInstructionHexCode(string code)
 {
-	this->section = section;
+	code = returnAsLittleEndian(code);
+	this->instructionHexCode = code;
 }
 
-string Content::getHexCode()
+string Content::getDisp()
 {
-	return this->hexCode;
+	return disp;
 }
 
-void Content::setHexCode(string code)
+void Content::setDisp(string disp)
 {
-	this->hexCode = code;
+	disp = returnAsLittleEndian(disp);
+	this->disp = disp;
 }

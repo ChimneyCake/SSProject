@@ -9,17 +9,18 @@ class Section;
 
 class Content {
 private:
-	Section* section;
-	string hexCode;
+	string instructionHexCode;
+	string disp;
 public:
-	Content(string) ;
+	Content() ;
 	~Content() {};
 
-	Section* getSection();
-	void setSection(Section*);
 
-	string getHexCode();
-	void setHexCode(string code);
+	string getInstructionHexCode();
+	void setInstructionHexCode(string);
+
+	string getDisp();
+	void setDisp(string);
 };
 
 #endif // !Content_
