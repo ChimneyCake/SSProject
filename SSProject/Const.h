@@ -16,11 +16,11 @@
 
 using namespace std;
 static vector<string> Sections = { ".RODATA", ".DATA", ".BSS", ".TEXT" };
-static vector<string> Registers= { "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "PC", "SP"};
+static vector<string> Registers = { "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "PC", "SP" };
 static vector<string> SystemDefinedWords = { "DUP", "DEF", "ORG" };
 static vector<string> Scope = { "local", "global" };
 static vector<string> NoOperandInstructions = { "RET" };
-static vector<string> OneOperandInstructions = {"INT","JMP", "CALL","PUSH", "POP"};
+static vector<string> OneOperandInstructions = { "INT","JMP", "CALL","PUSH", "POP" };
 static vector<string> TwoOperandsInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ", "LOAD", "STORE", "LOADUB", "LOADSB", "LOADUW", "LOADSW", "STOREB", "STOREW" };
 static vector<string> ThreeOperandsInstructions = { "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR",  "ASL", "ASR" };
 static vector<string> JumpInstructions = { "JZ", "JNZ", "JGZ", "JGEZ", "JLZ", "JLEZ" };
@@ -75,9 +75,9 @@ static bool isOrg(string text)
 static bool isLabel(string text)
 {
 	string s = text.substr(0, text.find(" "));
-	if (s[s.length()-1] == ':')
+	if (s[s.length() - 1] == ':')
 		return true;
-	else 
+	else
 		return false;
 }
 
@@ -116,7 +116,7 @@ static bool isRegindDisp(string opCode)
 	toUpper(opCode);
 	if (opCode[0] == '[')
 	{
-		if (opCode[3]=='+'||opCode[4] == '+')
+		if (opCode[3] == '+' || opCode[4] == '+')
 			if (opCode[opCode.length() - 1] == ']')
 				return true;
 	}
@@ -201,7 +201,7 @@ static bool isBinary(string text)
 {
 	if (text.substr(0, 2) == "0b")
 		return true;
-	else 
+	else
 		return false;
 }
 
@@ -212,7 +212,7 @@ static int convertStringToInt(string text)
 		string s = text.substr(2, text.length() - 2);
 		char * p;
 		int n = strtol(s.c_str(), &p, 16);
-			return n;
+		return n;
 	}
 	else
 		if (isBinary(text))
@@ -234,10 +234,10 @@ static int convertStringToInt(string text)
 static string sectionName(string text)
 {
 	toUpper(text);
-	if (text.substr(0, 7) == ".RODATA") text=".RODATA";
+	if (text.substr(0, 7) == ".RODATA") text = ".RODATA";
 	if (text.substr(0, 5) == ".DATA") text = ".DATA";
-	if (text.substr(0, 5) == ".TEXT") text=".TEXT";
-	if (text.substr(0, 4) == ".BSS") text=".BSS";
+	if (text.substr(0, 5) == ".TEXT") text = ".TEXT";
+	if (text.substr(0, 4) == ".BSS") text = ".BSS";
 	return text;
 }
 
@@ -344,7 +344,7 @@ static Section* findSectionByName(string name)//find section by it's name
 static SymbolTable* findSymbolByName(string name)
 {
 	list<SymbolTable*>::iterator it;
-	for (it = SymbolList->begin(); it !=SymbolList->end(); ++it)
+	for (it = SymbolList->begin(); it != SymbolList->end(); ++it)
 	{
 		if ((*it)->getName() == name)
 			return *it;
@@ -430,7 +430,7 @@ static string intRegAsBinary(int a)
 		mask <<= 1;
 	}
 	string ret = "";
-	
+
 	ret += binary[0];
 	ret += binary[1];
 	ret += binary[2];

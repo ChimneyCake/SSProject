@@ -23,7 +23,7 @@ void Parser::parseFile()
 	while (!inputFile.eof())
 	{
 		getline(inputFile, line);
-		if (line != "")	
+		if (line != "")
 			parse(line);
 		else
 			continue;
@@ -55,7 +55,7 @@ void Parser::relocate(string line)
 	}
 	else if (isLabel(line))
 		relocateLabel(line);
-	else if (isData(line)||isDEF(line))
+	else if (isData(line) || isDEF(line))
 		relocateData(line);
 	else if (isGlobal(line))
 		relocateGlobal(line);
@@ -71,7 +71,7 @@ void Parser::relocateGlobal(string line)
 		sym->setScope("global");
 	else
 	{
-		SymbolTable* sym=new Symbol(label);
+		SymbolTable* sym = new Symbol(label);
 		((Symbol*)sym)->setIdSection(0);
 		sym->setIsSection(false);
 		sym->setOffset(0);
@@ -192,7 +192,7 @@ void Parser::relocateData(string line)
 					else
 					{
 						id = s->getId();
-						disp = 0 ;
+						disp = 0;
 					}
 				}
 				else
@@ -216,7 +216,7 @@ void Parser::relocateData(string line)
 					hexCode = intDispAsHex(disp);
 			}
 		}
-		else if ((isConst(sym) && !isExpression(sym))||(isConst(sym)&& isExpression(sym))||sym=="?")//samo konst vrednost, nema relokacije
+		else if ((isConst(sym) && !isExpression(sym)) || (isConst(sym) && isExpression(sym)) || sym == "?")//samo konst vrednost, nema relokacije
 		{
 			string hexCode;
 			if (sym != "?")
@@ -251,7 +251,7 @@ void Parser::relocateData(string line)
 			int i = 0;
 			while (i < sym.length() && sym[i] != '+')
 				i++;
-			exp = sym.substr(i + 1, sym.length()-i-1);
+			exp = sym.substr(i + 1, sym.length() - i - 1);
 
 			int value = calculateExpression(exp);
 			int disp;
@@ -260,7 +260,7 @@ void Parser::relocateData(string line)
 			{
 				//relokacija
 				offset = tmpSection->getLocationCounter();
-				
+
 				if (s->getSection()->getOrgFlag() == true)
 				{
 					if (s->getScope() == "local")
@@ -288,13 +288,13 @@ void Parser::relocateData(string line)
 					}
 				}
 				if (line.substr(0, 2) == "DB")
-					hexCode=intAsHex(disp);
-				if(line.substr(0,2)=="DW")
-					hexCode= intTwoBytesAsHex(disp);
-				if(line.substr(0,2)=="DD")
+					hexCode = intAsHex(disp);
+				if (line.substr(0, 2) == "DW")
+					hexCode = intTwoBytesAsHex(disp);
+				if (line.substr(0, 2) == "DD")
 					hexCode = intDispAsHex(disp);
 			}
-			
+
 		}
 	}
 
@@ -305,7 +305,7 @@ void Parser::relocateData(string line)
 	if (line.substr(0, 2) == "DD")
 		tmpSection->setLocationCounter((tmpSection->getLocationCounter() + 4)*num);
 
-	
+
 }
 
 void Parser::contentArithmetic(string line)
@@ -322,7 +322,7 @@ void Parser::contentArithmetic(string line)
 	string reg0 = word;
 	iss >> word;
 	string reg1 = word;
-	
+
 	int r0 = RegisterCodes.at(reg0);
 	int r1 = RegisterCodes.at(reg1);
 	string reg2;
@@ -330,7 +330,7 @@ void Parser::contentArithmetic(string line)
 	reg0 = intRegAsBinary(r0);
 	reg1 = intRegAsBinary(r1);
 	//intRegAsBinary(RegisterCodes.at(reg0));
-	
+
 	if (instruction != "NOT")
 	{
 		iss >> word;
@@ -348,9 +348,9 @@ void Parser::contentArithmetic(string line)
 	code.append(reg1);
 	code.append(reg2);
 	code.append("000000");
-	
+
 	string hexCode = returnHexCode(code);
-	cout << hexCode<<endl;
+	cout << hexCode << endl;
 
 	Content* con = new Content();
 	con->setInstructionHexCode(hexCode);
@@ -445,7 +445,7 @@ void Parser::contentNoRelocateTwoOperands(string line)
 		if (instruction == "STOREW")
 			code.append("001");
 		if (instruction == "LOAD" || instruction == "STORE")
-			code.append("000");		
+			code.append("000");
 		code.append("000");
 	}
 	else
@@ -479,7 +479,7 @@ void Parser::relocateInstruction(string line)
 	{
 		size_t position = line.find(" ");
 		position = line.find(" ", position + 1);
-		string addressMode = line.substr(position+1, std::string::npos);
+		string addressMode = line.substr(position + 1, std::string::npos);
 		if (isRegdir(addressMode) || isRegInd(addressMode))
 		{
 			tmpSection->setLocationCounter(tmpSection->getLocationCounter() + 4);
@@ -512,7 +512,7 @@ void Parser::relocateInstruction(string line)
 			contentRelocateOneOperand(x);
 		}
 	}
-	if(isNoOperandInstruction(instruction))
+	if (isNoOperandInstruction(instruction))
 	{
 		string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));
 		string code = "";
@@ -549,7 +549,7 @@ void Parser::contentNoRelocateOneOperand(string line)
 
 
 	string addrModeCode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
-	operand= intRegAsBinary(RegisterCodes.at(operand));
+	operand = intRegAsBinary(RegisterCodes.at(operand));
 
 	string code;
 	code.append(opCode);
@@ -657,7 +657,7 @@ void Parser::contentRelocateOneOperand(string line)
 				int res = calculateExpression(operand);
 				offset = tmpSection->getLocationCounter() - 4;
 				id = 0;
-				disp =res-4;
+				disp = res - 4;
 				RelocationTable* reloc = new RelocationTable();
 				reloc->setType(type);
 				reloc->setOffset(offset);
@@ -688,9 +688,9 @@ void Parser::contentRelocateOneOperand(string line)
 						{
 							id = 0;
 							if (sym->getScope() == "local")
-								disp = 0 - 4+res;
+								disp = 0 - 4 + res;
 							else
-								disp = 0+res;
+								disp = 0 + res;
 						}
 						RelocationTable* reloc = new RelocationTable();
 						reloc->setType(type);
@@ -705,12 +705,12 @@ void Parser::contentRelocateOneOperand(string line)
 							if (sym->getScope() == "local")
 							{
 								id = sym->getSection()->getId();
-								disp = 0+res;
+								disp = 0 + res;
 							}
 							else
 							{
 								id = sym->getId();
-								disp = 0 - 4+res;
+								disp = 0 - 4 + res;
 							}
 							RelocationTable* reloc = new RelocationTable();
 							reloc->setType(type);
@@ -723,12 +723,12 @@ void Parser::contentRelocateOneOperand(string line)
 							if (sym->getScope() == "local")
 							{
 								id = sym->getSection()->getId();
-								disp = sym->getOffset() - 4 +res;
+								disp = sym->getOffset() - 4 + res;
 							}
 							else
 							{
 								id = sym->getId();
-								disp = 0 - 4+res;
+								disp = 0 - 4 + res;
 							}
 							RelocationTable* reloc = new RelocationTable();
 							reloc->setType(type);
@@ -831,7 +831,7 @@ void Parser::contentRelocateOneOperand(string line)
 						reg = "00000";
 					}
 				}
-				
+
 			}
 		}
 		else if (isConst(operand) && !isExpression(operand))
@@ -869,12 +869,12 @@ void Parser::contentRelocateOneOperand(string line)
 					if (sym->getScope() == "local")
 					{
 						id = ((Symbol*)sym)->getIdSection();
-						disp = sym->getOffset()+res;
+						disp = sym->getOffset() + res;
 					}
 					else
 					{
 						id = sym->getId();
-						disp = 0+res;
+						disp = 0 + res;
 					}
 					if (addressMode == "reginddisp")
 					{
@@ -1048,9 +1048,9 @@ void Parser::contentRelocateTwoOperands(string line)
 					{
 						id = 0;
 						if (sym->getScope() == "local")
-							disp = 0 - 4+res;
+							disp = 0 - 4 + res;
 						else
-							disp = 0+res;
+							disp = 0 + res;
 					}
 					RelocationTable* reloc = new RelocationTable();
 					reloc->setType(type);
@@ -1065,12 +1065,12 @@ void Parser::contentRelocateTwoOperands(string line)
 						if (sym->getScope() == "local")
 						{
 							id = sym->getSection()->getId();
-							disp = 0+res;
+							disp = 0 + res;
 						}
 						else
 						{
 							id = sym->getId();
-							disp = 0 - 4+res;
+							disp = 0 - 4 + res;
 						}
 						RelocationTable* reloc = new RelocationTable();
 						reloc->setType(type);
@@ -1083,12 +1083,12 @@ void Parser::contentRelocateTwoOperands(string line)
 						if (sym->getScope() == "local")
 						{
 							id = sym->getSection()->getId();
-							disp = sym->getOffset() - 4+res;
+							disp = sym->getOffset() - 4 + res;
 						}
 						else
 						{
 							id = sym->getId();
-							disp = 0 - 4+res;
+							disp = 0 - 4 + res;
 						}
 						RelocationTable* reloc = new RelocationTable();
 						reloc->setType(type);
@@ -1102,8 +1102,8 @@ void Parser::contentRelocateTwoOperands(string line)
 
 		addressMode = intAddrModeAsBinary(AddressModeCodes.at(addressMode));
 		string opCode = intOpCodeAsBinary(OperationCodes.at(instruction));
-		string reg0= intRegAsBinary(RegisterCodes.at(second));
-		string reg1= intRegAsBinary(RegisterCodes.at(reg));
+		string reg0 = intRegAsBinary(RegisterCodes.at(second));
+		string reg1 = intRegAsBinary(RegisterCodes.at(reg));
 		string code = "";
 		code.append(opCode);
 		code.append(addressMode);
@@ -1258,12 +1258,12 @@ void Parser::contentRelocateTwoOperands(string line)
 					if (sym->getScope() == "local")
 					{
 						id = ((Symbol*)sym)->getIdSection();
-						disp = sym->getOffset()+res;
+						disp = sym->getOffset() + res;
 					}
 					else
 					{
 						id = sym->getId();
-						disp = 0+res;
+						disp = 0 + res;
 					}
 					if (addressMode == "reginddisp")
 					{
@@ -1455,7 +1455,7 @@ void Parser::parseGlobal(string line)
 
 void Parser::parseOrg(string line)
 {
-	string value = line.substr(4, line.length()-4);
+	string value = line.substr(4, line.length() - 4);
 	orgValue = convertStringToInt(value);
 	previous = current;
 	current = new SymbolTable("ORG");
@@ -1467,7 +1467,7 @@ void Parser::parseSection(string line)
 	previous = current;
 	current = section;
 	tmpSection = (Section*)section;
-	if (previous!=NULL && previous->getName()== "ORG")
+	if (previous != NULL && previous->getName() == "ORG")
 	{
 		section->setOffset(orgValue);
 		((Section*)(section))->setOrgFlag(true);
@@ -1492,9 +1492,9 @@ void Parser::parseSection(string line)
 
 void Parser::parseLabel(string line)
 {
-	string s= line.substr(0, line.find(":"));
+	string s = line.substr(0, line.find(":"));
 	size_t position = line.find(" ");
-	string more = line.substr(position+1, line.length() - s.length());//something has to be done with this
+	string more = line.substr(position + 1, line.length() - s.length());//something has to be done with this
 
 	if (isData(more))
 		data(more);
@@ -1525,7 +1525,7 @@ void Parser::data(string line)
 	//size_t position = line.find(" ");
 	//string more = line.substr(position + 1, line.length() - name.length());//something has to be done with this
 
-	int num=1;
+	int num = 1;
 
 	if (isDUP(line))
 	{
@@ -1560,7 +1560,7 @@ void Parser::data(string line)
 
 	}
 
-	
+
 	if (isDEF(line))
 	{
 		istringstream iss(line);

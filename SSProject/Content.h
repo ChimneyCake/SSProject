@@ -12,9 +12,8 @@ private:
 	string instructionHexCode;
 	string disp;
 public:
-	Content() ;
+	Content();
 	~Content() {};
-
 
 	string getInstructionHexCode();
 	void setInstructionHexCode(string);
