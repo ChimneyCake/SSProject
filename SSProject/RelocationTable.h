@@ -12,8 +12,8 @@ class Symbol;
 class RelocationTable {
 private:
 	string offset;
-	string type;//absolut or relative
-	int id;//symbol id or section id when it goes about local symbool
+	string type;
+	int id;
 public:
 	RelocationTable();
 	~RelocationTable() {};

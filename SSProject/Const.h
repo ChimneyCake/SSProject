@@ -598,8 +598,8 @@ static void deleteComments(string& text)
 			x += text[i];
 			i++;
 		}
-		text = x;
-	}
+		text = x;
+	}
 }
 
 static void deleteCommas(string& text)

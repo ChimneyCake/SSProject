@@ -30,7 +30,7 @@ public:
 	Parser(string path);
 	~Parser() {};
 	void parseFile();
-	void parse(string&);//first pass
+	void parse(string&);
 	void writeInFile();
 	void relocate(string);
 

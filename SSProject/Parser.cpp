@@ -85,7 +85,7 @@ void Parser::relocateGlobal(string line)
 	}
 	string x;
 	int i = 0;
-	while (i<lab.length() - 1)
+	while (i < lab.length() - 1)
 	{
 		x += lab[i];
 		i++;
@@ -176,7 +176,7 @@ void Parser::relocateData(string line)
 					if (s->getScope() == "local")
 					{
 						id = tmpSection->getId();
-						disp =s->getOffsetInt();
+						disp = s->getOffsetInt();
 					}
 					else
 					{
@@ -269,7 +269,7 @@ void Parser::relocateData(string line)
 			SymbolTable* s = findSymbolByName(op);
 			if (s != NULL)
 			{
-				int offset=tmpSection->getLocationCounter();
+				int offset = tmpSection->getLocationCounter();
 				int id;
 				string hexCode;
 				int disp;
@@ -769,7 +769,7 @@ void Parser::contentRelocateOneOperand(string line)
 		operand = second.substr(1, second.length() - 1);
 		reg = "PC";
 		type = "R";
-		if (!isExpression(operand) && !isConst(operand))//ono sto vec imam-.txt fajl xD
+		if (!isExpression(operand) && !isConst(operand))
 		{
 			SymbolTable* sym = findSymbolByName(operand);
 			if (sym != NULL)
@@ -1001,7 +1001,7 @@ void Parser::contentRelocateOneOperand(string line)
 					reloc->setId(id);
 					((Section*)tmpSection)->relocationTableList->push_back(reloc);
 				}
-				else//nema relokacije ako je orgovana sekcija, ali mora da se popuni memorija
+				else
 				{
 					disp = 0;
 					if (addressMode == "reginddisp")
@@ -1072,7 +1072,7 @@ void Parser::contentRelocateOneOperand(string line)
 					reloc->setId(id);
 					((Section*)tmpSection)->relocationTableList->push_back(reloc);
 				}
-				else//nema relokacije, ali mora da se popuni memorija
+				else
 				{
 					disp = 0;
 					if (addressMode == "reginddisp")
@@ -1594,7 +1594,7 @@ void Parser::writeInFile()
 			loccountss << loccount;
 			string loccounts = loccountss.str();
 			line.append(loccounts);
-			
+
 			//flagovi fale
 
 			outputFile.write(line.c_str(), line.length());
@@ -1630,7 +1630,7 @@ void Parser::writeInFile()
 			std::string result(stream.str());
 			string offsets = "0x";
 			int x = 8 - result.length();
-			while (x>0)
+			while (x > 0)
 			{
 				offsets.append("0");
 				x--;
@@ -1654,7 +1654,7 @@ void Parser::writeInFile()
 		string n = (*its)->getName();
 		string name = "#rel" + n;
 		outputFile.write(name.c_str(), name.length());
-		outputFile.write("\n",1);
+		outputFile.write("\n", 1);
 		list<RelocationTable*>::iterator itrel;
 		for (itrel = (*its)->relocationTableList->begin(); itrel != (*its)->relocationTableList->end(); ++itrel)
 		{
@@ -1739,7 +1739,7 @@ void Parser::parseGlobal(string line)
 	}
 	string x;
 	int i = 0;
-	while (i<lab.length() - 1)
+	while (i < lab.length() - 1)
 	{
 		x += lab[i];
 		i++;
@@ -1756,7 +1756,7 @@ void Parser::parseGlobal(string line)
 				((Symbol*)sym)->setIdSection(-1);
 		}
 		else if (tmpSection != NULL)
-				parseLabel(name);
+			parseLabel(name);
 	}
 	/*SymbolTable* sym = findSymbolByName(label);
 	if (sym != NULL)
@@ -1849,10 +1849,6 @@ void Parser::parseLabel(string line)
 
 void Parser::data(string line)
 {
-	//string name = line.substr(0, line.find(":"));
-	//size_t position = line.find(" ");
-	//string more = line.substr(position + 1, line.length() - name.length());//something has to be done with this
-
 	int num = 1;
 
 	if (isDUP(line))
@@ -1915,17 +1911,6 @@ char* Parser::expressionToParse = new char[2];
 
 int Parser::calculateExpression(string operand)
 {
-	/*char* ar = new char[2];
-	char* val = ar;
-	int i = 0;
-	while (i < operand.length())
-	{
-		*ar++= operand[i];
-		i++;
-	}
-	char x = *val;
-	cout << x<<endl;
-	ar = "";*/
 	char* val = expressionToParse;
 	int i = 0;
 	while (i < operand.length())

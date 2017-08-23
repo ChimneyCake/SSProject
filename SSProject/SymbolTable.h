@@ -18,7 +18,7 @@ class SymbolTable
 private:
 	static int statid;
 	string name;
-	Section *section;//maybe it's better to have a class for section, not just string
+	Section *section;
 	string offset;
 	int offsetint;
 	unsigned int id = statid++;
