@@ -29,7 +29,7 @@ static vector<string> LoadStoreInstructions = { "LOAD", "STORE", "LOADUB", "LOAD
 static vector<string> StackInstructions = { "PUSH", "POP" };
 //static map<int, string> HexadecimalNumbers = { {0, "0x00"}, {1, "0x01"}, {2, "0x02"}, {3, "0x03"}, {4, "0x04"}, {5, "0x05"}, {6, "0x06"}, {7, "0x07"}, {8, "0x08"}, {9, "0x09"}, {10, "0x0A"}, {11, "0x0B"}, {12, "0x0C"}, {13, "0x0D"}, {14, "0x0E"}, {15, "0x0F"} };
 static map<string, int> OperationCodes = { {"INT", 0x00}, {"JMP", 0x02}, {"CALL", 0x03}, {"RET", 0x01}, {"JZ", 0x04},{"JNZ", 0x05}, {"JGZ", 0x06}, {"JGEZ", 0x07}, {"JLZ", 0x08}, {"JLEZ", 0x09}, {"LOAD", 0x10},{ "LOADUB", 0x10 },{ "LOADSB", 0x10 },{ "LOADUW", 0x10 },{ "LOADSW", 0x10 },{"STORE", 0x11},{ "STOREB", 0x11 },{ "STOREW", 0x11 },{"PUSH", 0x20},{"POP", 0x21}, {"ADD", 0x30}, {"SUB", 0x31}, {"MUL", 0x32}, {"DIV", 0x33}, {"MOD", 0x34}, {"AND", 0x35}, {"OR", 0x36}, {"XOR", 0x37}, {"NOT", 0x38}, {"ASL", 0x39}, {"ASR", 0x3A} };
-static map<string, int> RegisterCodes = { {"R0", 0x00}, {"R1", 0x01}, {"R2", 0x02}, {"R3", 0x03}, {"R4", 0x04}, {"R5", 0x05}, {"R6", 0x06}, {"R7", 0x07}, {"R8", 0x08}, {"R9", 0x09}, {"R10", 0x0A}, {"R11", 0x0B}, {"R12", 0x0C}, {"R13", 0x0D}, {"R14", 0x0E}, {"R15", 0x0F},{ "SP", 0x10 } ,{ "PC", 0x11 } };
+static map<string, int> RegisterCodes = { {"R0", 0x00}, {"R1", 0x01}, {"R2", 0x02}, {"R3", 0x03}, {"R4", 0x04}, {"R5", 0x05}, {"R6", 0x06}, {"R7", 0x07}, {"R8", 0x08}, {"R9", 0x09}, {"R10", 0x0A}, {"R11", 0x0B}, {"R12", 0x0C}, {"R13", 0x0D}, {"R14", 0x0E}, {"R15", 0x0F},{ "SP", 0x11 } ,{ "PC", 0x10 } };
 static map<string, int> AddressModeCodes = { {"immed", 0b100}, {"regdir", 0b000}, {"memdir", 0b110}, {"regind", 0b010}, {"reginddisp", 0b111} };
 //static map<string, string> RegCodes = { {"R0", "0x00"}, {"R1", "0x01"}, {"R2", "0x02"}, {"R3", "0x03"}, {"R4", "0x04"}, {"R5", "0x05"}, {"R6", "0x06"}, {"R7", "0x07"}, {"R8", "0x08"}, {"R9", "0x09"}, {"R10", "0x0A"}, {"R11", "0x0B"}, {"R12", "0x0C"}, {"R13", "0x0D"}, {"R14", "0x0E"}, {"R15", "0x0F"}, {"PC", "0x10"}, {"SP", "0x11"} };
 //DW-double word
@@ -493,11 +493,6 @@ static void setCountersToZero()
 	}
 }
 
-static void checkOrgOverlaping()
-{
-
-}
-
 static string returnHexCode(string code)
 {
 	string b4 = "0b";
@@ -590,6 +585,32 @@ static string returnAsHexString(int text)
 	}
 	a.append(result);
 	return a;
+}
+
+static void deleteComments(string& text)
+{
+	string x;
+	int i = 0;
+	if (text.find_first_of(";") != std::string::npos)
+	{
+		while (text[i] != ';')
+		{
+			x += text[i];
+			i++;
+		}
+		text = x;
+	}
+}
+
+static void deleteCommas(string& text)
+{
+	string x;
+	for (std::string::iterator it = text.begin(); it != text.end(); ++it)
+	{
+		if (*it != ',')
+			x += *it;
+	}
+	text = x;
 }
 #endif // !Const_
 

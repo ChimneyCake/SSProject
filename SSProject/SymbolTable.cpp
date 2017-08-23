@@ -50,6 +50,11 @@ int SymbolTable::getOffsetInt()
 	return offsetint;
 }
 
+void SymbolTable::setOffsetInt(int x)
+{
+	this->offsetint = x;
+}
+
 void SymbolTable::setOffset(int offset)
 {
 	offsetint = offset;

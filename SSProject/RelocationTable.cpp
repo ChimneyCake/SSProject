@@ -26,12 +26,12 @@ void RelocationTable::setType(string type)
 	this->type = type;
 }
 
-unsigned int RelocationTable::getId()
+int RelocationTable::getId()
 {
 	return this->id;
 }
 
-void RelocationTable::setId(unsigned int id)
+void RelocationTable::setId(int id)
 {
 	this->id = id;
 }

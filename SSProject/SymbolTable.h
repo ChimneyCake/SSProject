@@ -35,6 +35,7 @@ public:
 	void setName(string);
 
 	int getOffsetInt();
+	void setOffsetInt(int);
 
 	string getOffset();
 	void setOffset(int);

@@ -24,11 +24,14 @@ void Parser::parseFile()
 	{
 		getline(inputFile, line);
 		if (line != "")
+		{
+			deleteComments(line);
+			deleteCommas(line);
 			parse(line);
+		}
 		else
 			continue;
 	}
-	checkOrgOverlaping();
 	setCountersToZero();
 	inputFile.clear();
 	inputFile.seekg(0, ios::beg);
@@ -37,6 +40,8 @@ void Parser::parseFile()
 		getline(inputFile, line);
 		if (line != "")
 		{
+			deleteComments(line);
+			deleteCommas(line);
 			relocate(line);
 		}
 		else
@@ -66,18 +71,43 @@ void Parser::relocate(string line)
 void Parser::relocateGlobal(string line)
 {
 	string label = line.substr(8, line.length() - 8);
-	SymbolTable* sym = findSymbolByName(label);
-	if (sym != NULL)
-		sym->setScope("global");
-	else
+	list<string>* labels = new list<string>();
+	string lab;
+	for (std::string::iterator it = label.begin(); it != label.end(); ++it)
 	{
-		SymbolTable* sym = new Symbol(label);
-		((Symbol*)sym)->setIdSection(0);
-		sym->setIsSection(false);
-		sym->setOffset(0);
-		((Symbol*)sym)->setType("SYM");
-		SymbolList->push_back(sym);
-		Symbols->push_back((Symbol*)sym);
+		if (*it != ',')
+			lab += *it;
+		else
+		{
+			labels->push_back(lab);
+			lab = "";
+		}
+	}
+	string x;
+	int i = 0;
+	while (i<lab.length() - 1)
+	{
+		x += lab[i];
+		i++;
+	}
+	labels->push_back(x);
+	list<string>::iterator it;
+	for (it = labels->begin(); it != labels->end(); ++it)
+	{
+		string name = *it;
+		SymbolTable* sym = findSymbolByName(name);
+		if (sym != NULL)
+			sym->setScope("global");
+		else
+		{
+			SymbolTable* sym = new Symbol(label);
+			((Symbol*)sym)->setIdSection(0);
+			sym->setIsSection(false);
+			sym->setOffset(0);
+			((Symbol*)sym)->setType("SYM");
+			SymbolList->push_back(sym);
+			Symbols->push_back((Symbol*)sym);
+		}
 	}
 }
 
@@ -919,7 +949,7 @@ void Parser::contentRelocateOneOperand(string line)
 			operand = second.substr(1, operand.length() - 1);
 			addressMode = "immed";
 		}
-		else if (isRegindDisp(second))
+		else if (isRegindDisp(second)) //[R1+4]
 		{
 			int i = 0;
 			while (second[++i] != '+')
@@ -1585,7 +1615,7 @@ void Parser::writeInFile()
 			line.append(" ");
 			line.append((*it)->getName());
 
-			unsigned int idsec = ((Symbol*)*it)->getIdSection();
+			int idsec = ((Symbol*)*it)->getIdSection();
 			stringstream idsecss;
 			idsecss << idsec;
 			string idsecs = idsecss.str();
@@ -1594,7 +1624,19 @@ void Parser::writeInFile()
 			line.append(idsecs);
 
 			line.append(" ");
-			line.append((*it)->getOffset());
+			int offset = (*it)->getOffsetInt();
+			std::stringstream stream;
+			stream << std::hex << offset;
+			std::string result(stream.str());
+			string offsets = "0x";
+			int x = 8 - result.length();
+			while (x>0)
+			{
+				offsets.append("0");
+				x--;
+			}
+			offsets.append(result);
+			line.append(offsets);
 
 			line.append(" ");
 			if ((*it)->getScope() == "local")
@@ -1622,7 +1664,7 @@ void Parser::writeInFile()
 			line.append((*itrel)->getType());
 			line.append(" ");
 
-			unsigned int id = (*itrel)->getId();
+			int id = (*itrel)->getId();
 			stringstream idss;
 			idss << id;
 			string ids = idss.str();
@@ -1683,14 +1725,47 @@ void Parser::parse(string& line)
 void Parser::parseGlobal(string line)
 {
 	string label = line.substr(8, line.length() - 8);
-	SymbolTable* sym = findSymbolByName(label);
+	list<string>* labels = new list<string>();
+	string lab;
+	for (std::string::iterator it = label.begin(); it != label.end(); ++it)
+	{
+		if (*it != ',')
+			lab += *it;
+		else
+		{
+			labels->push_back(lab);
+			lab = "";
+		}
+	}
+	string x;
+	int i = 0;
+	while (i<lab.length() - 1)
+	{
+		x += lab[i];
+		i++;
+	}
+	labels->push_back(x);
+	list<string>::iterator it;
+	for (it = labels->begin(); it != labels->end(); ++it)
+	{
+		string name = *it;
+		SymbolTable* sym = findSymbolByName(name);
+		if (sym != NULL)
+		{
+			if (((Symbol*)sym)->getSection() != NULL && ((Symbol*)sym)->getSection()->getOrgFlag() == true)
+				((Symbol*)sym)->setIdSection(-1);
+		}
+		else if (tmpSection != NULL)
+				parseLabel(name);
+	}
+	/*SymbolTable* sym = findSymbolByName(label);
 	if (sym != NULL)
 	{
 		((Symbol*)sym)->setIdSection(-1);
 	}
 	else
 		if (tmpSection != NULL)
-			parseLabel(label);
+			parseLabel(label);*/
 }
 
 void Parser::parseOrg(string line)
@@ -1740,18 +1815,31 @@ void Parser::parseLabel(string line)
 		data(more);
 	else
 	{
-		SymbolTable* sym = new Symbol(s);
-		previous = current;
-		current = sym;
-		sym->setSection(tmpSection);
-		((Symbol*)sym)->setType("SYM");
-		if (sym->getSection()->getOrgFlag() == true)
-			sym->setOffset(orgValue + sym->getSection()->getLocationCounter());
-		else
-			sym->setOffset(sym->getSection()->getLocationCounter());
-		((Symbol*)sym)->setIdSection(tmpSection->getId());
-		if (!isInSymbols(sym->getName()))
+		if (isInSymbols(s))
 		{
+			SymbolTable* sym = findSymbolByName(s);
+			previous = current;
+			current = sym;
+			sym->setSection(tmpSection);
+			((Symbol*)sym)->setType("SYM");
+			if (sym->getSection()->getOrgFlag() == true)
+				sym->setOffset(orgValue + sym->getSection()->getLocationCounter());
+			else
+				sym->setOffset(sym->getSection()->getLocationCounter());
+			((Symbol*)sym)->setIdSection(tmpSection->getId());
+		}
+		else
+		{
+			SymbolTable* sym = new Symbol(s);
+			previous = current;
+			current = sym;
+			sym->setSection(tmpSection);
+			((Symbol*)sym)->setType("SYM");
+			if (sym->getSection()->getOrgFlag() == true)
+				sym->setOffset(orgValue + sym->getSection()->getLocationCounter());
+			else
+				sym->setOffset(sym->getSection()->getLocationCounter());
+			((Symbol*)sym)->setIdSection(tmpSection->getId());
 			SymbolList->push_back(sym);
 			Symbols->push_back((Symbol*)sym);
 		}

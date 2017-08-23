@@ -13,7 +13,7 @@ class RelocationTable {
 private:
 	string offset;
 	string type;//absolut or relative
-	unsigned int id;//symbol id or section id when it goes about local symbool
+	int id;//symbol id or section id when it goes about local symbool
 public:
 	RelocationTable();
 	~RelocationTable() {};
@@ -24,8 +24,8 @@ public:
 	string getType();
 	void setType(string);
 
-	unsigned int getId();
-	void setId(unsigned int);
+	int getId();
+	void setId(int);
 };
 
 #endif // !RelocationTable_
