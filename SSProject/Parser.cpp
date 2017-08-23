@@ -146,7 +146,7 @@ void Parser::relocateData(string line)
 					if (s->getScope() == "local")
 					{
 						id = tmpSection->getId();
-						disp = s->getOffset();
+						disp =s->getOffsetInt();
 					}
 					else
 					{
@@ -239,7 +239,7 @@ void Parser::relocateData(string line)
 			SymbolTable* s = findSymbolByName(op);
 			if (s != NULL)
 			{
-				int offset;
+				int offset=tmpSection->getLocationCounter();
 				int id;
 				string hexCode;
 				int disp;
@@ -261,7 +261,7 @@ void Parser::relocateData(string line)
 					if (s->getScope() == "local")
 					{
 						id = tmpSection->getId();
-						disp = s->getOffset() + value;
+						disp = s->getOffsetInt() + value;
 					}
 					else
 					{
@@ -335,7 +335,7 @@ void Parser::relocateData(string line)
 					if (s->getScope() == "local")
 					{
 						id = tmpSection->getId();
-						disp = s->getOffset();
+						disp = s->getOffsetInt();
 					}
 					else
 					{
@@ -423,7 +423,7 @@ void Parser::relocateData(string line)
 					if (s->getScope() == "local")
 					{
 						id = tmpSection->getId();
-						disp = s->getOffset() + value;
+						disp = s->getOffsetInt() + value;
 					}
 					else
 					{
@@ -786,7 +786,7 @@ void Parser::contentRelocateOneOperand(string line)
 						if (sym->getScope() == "local")
 						{
 							id = tmpSection->getId();
-							disp = sym->getOffset() - 4;
+							disp = sym->getOffsetInt() - 4;
 						}
 						else
 						{
@@ -875,7 +875,7 @@ void Parser::contentRelocateOneOperand(string line)
 							if (sym->getScope() == "local")
 							{
 								id = tmpSection->getId();
-								disp = sym->getOffset() - 4 + res;
+								disp = sym->getOffsetInt() - 4 + res;
 							}
 							else
 							{
@@ -950,7 +950,7 @@ void Parser::contentRelocateOneOperand(string line)
 					if (sym->getScope() == "local")
 					{
 						id = tmpSection->getId();
-						disp = sym->getOffset();
+						disp = sym->getOffsetInt();
 					}
 					else
 					{
@@ -1021,7 +1021,7 @@ void Parser::contentRelocateOneOperand(string line)
 					if (sym->getScope() == "local")
 					{
 						id = tmpSection->getId();
-						disp = sym->getOffset() + res;
+						disp = sym->getOffsetInt() + res;
 					}
 					else
 					{
@@ -1148,7 +1148,7 @@ void Parser::contentRelocateTwoOperands(string line)
 						if (sym->getScope() == "local")
 						{
 							id = tmpSection->getId();
-							disp = sym->getOffset() - 4;
+							disp = sym->getOffsetInt() - 4;
 						}
 						else
 						{
@@ -1235,7 +1235,7 @@ void Parser::contentRelocateTwoOperands(string line)
 						if (sym->getScope() == "local")
 						{
 							id = tmpSection->getId();
-							disp = sym->getOffset() - 4 + res;
+							disp = sym->getOffsetInt() - 4 + res;
 						}
 						else
 						{
@@ -1338,7 +1338,7 @@ void Parser::contentRelocateTwoOperands(string line)
 					if (sym->getScope() == "local")
 					{
 						id = ((Symbol*)sym)->getIdSection();
-						disp = sym->getOffset();
+						disp = sym->getOffsetInt();
 					}
 					else
 					{
@@ -1410,7 +1410,7 @@ void Parser::contentRelocateTwoOperands(string line)
 					if (sym->getScope() == "local")
 					{
 						id = ((Symbol*)sym)->getIdSection();
-						disp = sym->getOffset() + res;
+						disp = sym->getOffsetInt() + res;
 					}
 					else
 					{
@@ -1536,40 +1536,128 @@ void Parser::writeInFile()
 	for (it = SymbolList->begin(); it != SymbolList->end(); ++it)
 	{
 		if ((*it)->getIsSection() == true)
-			outputFile.write("SEG", 3);
-		else
-			outputFile.write("SYM", 3);
-		outputFile.write(" ", 1);
+		{
+			string line;
+			line.append("SEG");
 
-		unsigned int id = ((*it)->getId());
-		stringstream idss;
-		idss << id;
-		string ids = idss.str();
+			unsigned int id = (*it)->getId();
+			stringstream idss;
+			idss << id;
+			string ids = idss.str();
 
-		outputFile.write(ids.c_str(), ids.length());
-		outputFile.write(" ", 1);
+			line.append(" ");
+			line.append(ids);
 
-		outputFile.write((*it)->getName().c_str(), (*it)->getName().length());
-		outputFile.write(" ", 1);
+			line.append(" ");
+			line.append((*it)->getName());
 
-		unsigned int idsec = ((*it)->getSection())->getId();
-		stringstream idsecss;
-		idsecss << idsec;
-		string idsecs = idsecss.str();
+			line.append(" ");
+			line.append(ids);
 
-		outputFile.write(idsecs.c_str(), idsecs.length());
-		outputFile.write(" ", 1);
+			line.append(" ");
+			line.append((*it)->getOffset());
 
-		int offset = (*it)->getOffset();
-		stringstream offsetss;
-		offsetss << offset;
-		string offsets = offsetss.str();
+			line.append(" ");
+			int loccount = ((Section*)(*it))->getLocationCounter();
 
-		outputFile.write(offsets.c_str(), offsets.length());
+			stringstream loccountss;
+			loccountss << loccount;
+			string loccounts = loccountss.str();
+			line.append(loccounts);
+			
+			//flagovi fale
 
-		if ((*it)->getIsSection() == false)
-			outputFile.write((*it)->getScope().c_str(), (*it)->getScope().length());
+			outputFile.write(line.c_str(), line.length());
+			outputFile.write("\n", 1);
+		}
+		else {
+			string line;
+			line.append("SYM");
 
+			unsigned int id = (*it)->getId();
+			stringstream idss;
+			idss << id;
+			string ids = idss.str();
+
+			line.append(" ");
+			line.append(ids);
+
+			line.append(" ");
+			line.append((*it)->getName());
+
+			unsigned int idsec = ((Symbol*)*it)->getIdSection();
+			stringstream idsecss;
+			idsecss << idsec;
+			string idsecs = idsecss.str();
+
+			line.append(" ");
+			line.append(idsecs);
+
+			line.append(" ");
+			line.append((*it)->getOffset());
+
+			line.append(" ");
+			if ((*it)->getScope() == "local")
+				line.append("L");
+			else
+				line.append("G");
+
+			outputFile.write(line.c_str(), line.length());
+			outputFile.write("\n", 1);
+		}
+	}
+	list<Section*>::iterator its;
+	for (its = SectionList->begin(); its != SectionList->end(); ++its)
+	{
+		string n = (*its)->getName();
+		string name = "#rel" + n;
+		outputFile.write(name.c_str(), name.length());
+		outputFile.write("\n",1);
+		list<RelocationTable*>::iterator itrel;
+		for (itrel = (*its)->relocationTableList->begin(); itrel != (*its)->relocationTableList->end(); ++itrel)
+		{
+			string line;
+			line.append((*itrel)->getOffset());
+			line.append(" ");
+			line.append((*itrel)->getType());
+			line.append(" ");
+
+			unsigned int id = (*itrel)->getId();
+			stringstream idss;
+			idss << id;
+			string ids = idss.str();
+
+			line.append(ids);
+			outputFile.write(line.c_str(), line.length());
+			outputFile.write("\n", 1);
+		}
+		list<Content*>::iterator itc;
+		string content;
+		for (itc = (*its)->contentList->begin(); itc != (*its)->contentList->end(); ++itc)
+		{
+			if ((*itc)->getDisp() != "")
+				content.append((*itc)->getDisp());
+			content.append((*itc)->getInstructionHexCode());
+		}
+		int i = 0;
+		string line;
+		for (std::string::iterator it = content.begin(); it != content.end(); ++it)
+		{
+			if (i == 32)
+			{
+				i = 0;
+				outputFile.write(line.c_str(), line.length());
+				outputFile.write("\n", 1);
+				line = "";
+			}
+			line += *it;
+			++it;
+			i++;
+			line += *it;
+			i++;
+			line += " ";
+		}
+		outputFile.write(line.c_str(), line.length());
 		outputFile.write("\n", 1);
 	}
 	outputFile.close();

@@ -1,5 +1,5 @@
 #include "SymbolTable.h"
-
+#include "Const.h"
 int SymbolTable::statid = 0;
 
 SymbolTable::SymbolTable(string name)
@@ -28,15 +28,7 @@ void SymbolTable::setIsSection(bool isSection)
 {
 	this->isSection = isSection;
 }
-/*string SymbolTable::getType()
-{
-	return this->type;
-}
 
-void SymbolTable::setType(string type)
-{
-	this->type = type;
-}*/
 
 Section* SymbolTable::getSection()
 {
@@ -48,13 +40,20 @@ void SymbolTable::setSection(Section* section)
 	this->section = section;
 }
 
-int SymbolTable::getOffset()
+string SymbolTable::getOffset()
 {
 	return offset;
 }
 
+int SymbolTable::getOffsetInt()
+{
+	return offsetint;
+}
+
 void SymbolTable::setOffset(int offset)
 {
+	offsetint = offset;
+	string tmp = returnAsHexString(offset);
 	this->offset = offset;
 }
 

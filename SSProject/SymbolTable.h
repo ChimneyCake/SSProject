@@ -19,7 +19,8 @@ private:
 	static int statid;
 	string name;
 	Section *section;//maybe it's better to have a class for section, not just string
-	int offset;
+	string offset;
+	int offsetint;
 	unsigned int id = statid++;
 	string scope;//local or global
 	bool isSection;
@@ -33,7 +34,9 @@ public:
 	string getName();
 	void setName(string);
 
-	int getOffset();
+	int getOffsetInt();
+
+	string getOffset();
 	void setOffset(int);
 
 	unsigned int getId();
